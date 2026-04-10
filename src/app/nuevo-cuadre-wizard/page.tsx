@@ -114,14 +114,20 @@ export default function NuevoCuadrePage() {
   }, [persistDraft]);
 
   const canProceed = (): boolean => {
-    if (step === 1) return !!turnoData.cajero.trim() && !!turnoData.fecha;
+    if (step === 1) return true;
     return true;
   };
 
   const handleNext = () => {
-    if (!canProceed()) {
-      toast.error('Completa los campos requeridos antes de continuar.');
-      return;
+    if (step === 1) {
+      if (!turnoData.fecha) {
+        toast.error('Selecciona la fecha del turno.');
+        return;
+      }
+      if (!turnoData.cajero.trim()) {
+        toast.error('Escribe el nombre del cajero para continuar.');
+        return;
+      }
     }
     setStep(s => Math.min(s + 1, 6));
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -278,7 +284,6 @@ export default function NuevoCuadrePage() {
                 type="button"
                 className="btn-primary flex-1 justify-center"
                 onClick={handleNext}
-                disabled={!canProceed()}
               >
                 {step === 5 ? 'Ver Resumen' : 'Continuar'}
                 <ChevronRight size={16} />

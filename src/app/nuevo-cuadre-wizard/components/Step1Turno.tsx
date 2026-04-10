@@ -1,5 +1,5 @@
 'use client';
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Calendar, User, Clock, DollarSign } from 'lucide-react';
 import type { MipymeConfig } from '@/lib/storage';
 
@@ -16,20 +16,14 @@ interface Props {
   config: MipymeConfig;
 }
 
-const TURNOS = ['Mañana', 'Tarde', 'Noche', 'Completo'] as const;
+const TURNOS: Array<'Mañana' | 'Tarde' | 'Noche' | 'Completo'> = ['Mañana', 'Tarde', 'Noche', 'Completo'];
 
 export default function Step1Turno({ data, onChange, config }: Props) {
-  const [cajeroInput, setCajeroInput] = useState(data.cajero);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   const filtered = config.cajeros.filter(c =>
-    c.toLowerCase().includes(cajeroInput.toLowerCase())
+    c.toLowerCase().includes(data.cajero.toLowerCase())
   );
-
-  useEffect(() => {
-    onChange({ ...data, cajero: cajeroInput });
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cajeroInput]);
 
   return (
     <div className="animate-fade-in space-y-5">
@@ -58,14 +52,14 @@ export default function Step1Turno({ data, onChange, config }: Props) {
       {/* Cajero */}
       <div className="relative">
         <label className="label">
-          <span className="flex items-center gap-1.5"><User size={12} />Cajero</span>
+          <span className="flex items-center gap-1.5"><User size={12} />Cajero <span className="text-red-400 normal-case font-normal tracking-normal">*</span></span>
         </label>
         <input
           type="text"
           className="input-base"
           placeholder="Nombre del cajero"
-          value={cajeroInput}
-          onChange={e => { setCajeroInput(e.target.value); setShowSuggestions(true); }}
+          value={data.cajero}
+          onChange={e => { onChange({ ...data, cajero: e.target.value }); setShowSuggestions(true); }}
           onFocus={() => setShowSuggestions(true)}
           onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
           autoComplete="off"
@@ -81,7 +75,7 @@ export default function Step1Turno({ data, onChange, config }: Props) {
                 type="button"
                 className="w-full text-left px-3 py-2.5 text-sm transition-colors hover:bg-white/5"
                 style={{ color: 'hsl(var(--text-primary))' }}
-                onMouseDown={() => { setCajeroInput(c); setShowSuggestions(false); }}
+                onMouseDown={() => { onChange({ ...data, cajero: c }); setShowSuggestions(false); }}
               >
                 {c}
               </button>
@@ -96,21 +90,24 @@ export default function Step1Turno({ data, onChange, config }: Props) {
           <span className="flex items-center gap-1.5"><Clock size={12} />Turno</span>
         </label>
         <div className="grid grid-cols-2 gap-2">
-          {TURNOS.map(t => (
-            <button
-              key={`turno-${t}`}
-              type="button"
-              onClick={() => onChange({ ...data, turno: t })}
-              className="py-2.5 px-3 rounded-lg text-sm font-medium transition-all duration-150 border"
-              style={{
-                background: data.turno === t ? 'hsl(var(--primary-dim))' : 'hsl(var(--surface-2))',
-                borderColor: data.turno === t ? 'hsl(var(--primary) / 0.5)' : 'hsl(var(--border))',
-                color: data.turno === t ? 'hsl(var(--primary-light))' : 'hsl(var(--text-secondary))',
-              }}
-            >
-              {t}
-            </button>
-          ))}
+          {TURNOS.map(t => {
+            const isSelected = data.turno === t;
+            return (
+              <button
+                key={`turno-btn-${t}`}
+                type="button"
+                onClick={() => onChange({ ...data, turno: t })}
+                className={[
+                  'py-3 px-3 rounded-lg text-sm font-semibold transition-all duration-150 border-2 cursor-pointer select-none',
+                  isSelected
+                    ? 'bg-emerald-900/60 border-emerald-500 text-emerald-300 shadow-md'
+                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/25 hover:text-white/75 hover:bg-white/5',
+                ].join(' ')}
+              >
+                {t}
+              </button>
+            );
+          })}
         </div>
       </div>
 

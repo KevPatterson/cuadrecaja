@@ -1,8 +1,8 @@
 'use client';
 import React, { useState } from 'react';
-import { X, User, Clock, ShoppingBag, Wallet, Scale, CreditCard, Receipt, Package, MinusCircle, AlertTriangle, Trash2 } from 'lucide-react';
+import { X, User, Clock, ShoppingBag, Wallet, Scale, CreditCard, Receipt, Package, MinusCircle, AlertTriangle, Trash2, Printer } from 'lucide-react';
 import type { Cuadre } from '@/lib/storage';
-import { formatCUP, formatDate, getDiferenciaStatus, DENOMINATIONS } from '@/lib/storage';
+import { formatCUP, formatDate, getDiferenciaStatus, DENOMINATIONS, printCuadrePDF, getConfig } from '@/lib/storage';
 
 interface Props {
   cuadre: Cuadre;
@@ -222,14 +222,27 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
 
           {/* Delete */}
           {!confirmDelete ? (
-            <button
-              type="button"
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
-              style={{ color: 'hsl(var(--danger))', border: '1px solid hsl(var(--danger) / 0.3)' }}
-              onClick={() => setConfirmDelete(true)}
-            >
-              <Trash2 size={15} />Eliminar este cuadre
-            </button>
+            <div className="space-y-2">
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
+                style={{ color: 'hsl(var(--primary-light))', border: '1px solid hsl(var(--primary) / 0.3)', background: 'hsl(var(--primary-dim))' }}
+                onClick={() => {
+                  const cfg = getConfig();
+                  printCuadrePDF(cuadre, cfg.nombre || 'Mi Negocio');
+                }}
+              >
+                <Printer size={15} />Exportar / Imprimir PDF
+              </button>
+              <button
+                type="button"
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
+                style={{ color: 'hsl(var(--danger))', border: '1px solid hsl(var(--danger) / 0.3)' }}
+                onClick={() => setConfirmDelete(true)}
+              >
+                <Trash2 size={15} />Eliminar este cuadre
+              </button>
+            </div>
           ) : (
             <div
               className="rounded-xl p-4 space-y-3"
