@@ -25,7 +25,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
             Arqueo Físico
@@ -35,7 +35,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
           </p>
         </div>
         <div
-          className="text-right shrink-0 px-3 py-2"
+          className="text-right shrink-0 px-3 py-2 w-full sm:w-auto"
           style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <p className="text-xs font-medium" style={{ color: 'var(--ink-muted)' }}>Total</p>
@@ -53,14 +53,14 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
           return (
             <div
               key={`denom-${denom}`}
-              className="flex items-center gap-3 px-4 py-3 transition-all duration-150"
+              className="flex flex-col sm:flex-row sm:items-center gap-3 px-3 sm:px-4 py-3 transition-all duration-150"
               style={{
                 background: isActive ? 'var(--bg-alt)' : 'var(--bg)',
                 border: `2px solid var(--ink)`,
               }}
             >
               {/* Denomination label */}
-              <div className="flex items-center gap-2 w-20 shrink-0">
+              <div className="flex items-center gap-2 w-full sm:w-20 shrink-0">
                 <Coins size={14} style={{ color: isActive ? 'var(--ink)' : 'var(--ink-muted)' }} />
                 <span
                   className="font-mono-nums text-sm font-bold"
@@ -74,7 +74,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
               </div>
 
               {/* Quantity stepper */}
-              <div className="flex items-center gap-2 flex-1">
+              <div className="flex items-center gap-2 w-full sm:flex-1">
                 <button
                   type="button"
                   onClick={() => update(denom, qty - 1)}
@@ -91,7 +91,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
                 <input
                   type="number"
                   min={0}
-                  className="input-base text-center font-mono-nums text-sm font-semibold flex-1"
+                  className="input-base text-center font-mono-nums text-sm font-semibold flex-1 sm:flex-none"
                   style={{ maxWidth: '5rem' }}
                   value={qty || ''}
                   placeholder="0"
@@ -112,7 +112,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
               </div>
 
               {/* Subtotal */}
-              <div className="text-right w-20 shrink-0">
+              <div className="text-right w-full sm:w-20 shrink-0">
                 <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>Subtotal</p>
                 <p
                   className="font-mono-nums text-sm font-semibold"
@@ -128,7 +128,7 @@ export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, e
 
       {/* Summary bar */}
       <div
-        className="p-4 flex items-center justify-between"
+        className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2"
         style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
       >
         <div>

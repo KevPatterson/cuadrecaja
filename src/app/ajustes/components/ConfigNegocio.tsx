@@ -52,7 +52,7 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
 
   return (
     <div
-      className="card p-5 space-y-5"
+      className="card p-4 sm:p-5 space-y-5"
     >
       <div className="flex items-center gap-2 mb-1">
         <Building2 size={18} style={{ color: 'var(--ink)' }} />
@@ -105,14 +105,14 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
           {cajeros.map(c => (
             <span
               key={`cajero-tag-${c}`}
-              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium max-w-full"
               style={{
                 background: 'var(--bg-alt)',
                 color: 'var(--ink)',
                 border: '2px solid var(--ink)',
               }}
             >
-              {c}
+              <span className="truncate">{c}</span>
               <button
                 type="button"
                 onClick={() => removeCajero(c)}
@@ -129,7 +129,7 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <input
             type="text"
             className="input-base flex-1"
@@ -140,7 +140,7 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
           />
           <button
             type="button"
-            className="btn-ghost shrink-0"
+            className="btn-ghost shrink-0 w-full sm:w-auto justify-center"
             onClick={addCajero}
             disabled={!newCajero.trim()}
           >

@@ -133,18 +133,18 @@ export default function Step4IngresosGastos({
 
         <div className="space-y-2">
           {gastos.map(gasto => (
-            <div key={`gasto-${gasto.id}`} className="flex gap-2 items-center">
+            <div key={`gasto-${gasto.id}`} className="flex flex-wrap sm:flex-nowrap gap-2 items-center">
               <input
                 type="text"
-                className="input-base flex-1 text-sm"
+                className="input-base flex-1 min-w-0 text-sm"
                 placeholder="Concepto (ej: Transporte)"
                 value={gasto.concepto}
                 onChange={e => updateGasto(gasto.id, 'concepto', e.target.value)}
               />
               <input
                 type="number"
-                className="input-base font-mono-nums text-sm"
-                style={{ width: '6.5rem', flexShrink: 0 }}
+                className="input-base font-mono-nums text-sm w-full sm:w-auto"
+                style={{ flexShrink: 0 }}
                 placeholder="0.00"
                 min={0}
                 step={0.01}
@@ -154,7 +154,7 @@ export default function Step4IngresosGastos({
               <button
                 type="button"
                 onClick={() => removeGasto(gasto.id)}
-                className="p-2 rounded-lg transition-colors hover:bg-red-500/10 shrink-0"
+                className="p-2 rounded-lg transition-colors hover:bg-red-500/10 shrink-0 ml-auto sm:ml-0"
                 style={{ color: 'hsl(var(--text-muted))' }}
               >
                 <Trash2 size={15} />

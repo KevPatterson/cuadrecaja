@@ -73,7 +73,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
 
   return (
     <div className="animate-fade-in space-y-5">
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
             Inventario
@@ -83,7 +83,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
           </p>
         </div>
         <div
-          className="text-right shrink-0 px-3 py-2"
+          className="text-right sm:text-right shrink-0 px-3 py-2 w-full sm:w-auto"
           style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <p className="text-xs font-medium" style={{ color: 'var(--ink-muted)' }}>Ventas</p>
@@ -182,7 +182,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
                   </button>
                 </div>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <div>
                   <label className="text-xs font-medium mb-1 block" style={{ color: 'hsl(var(--text-muted))' }}>
                     Precio (CUP)
@@ -267,7 +267,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Nuevo producto (este turno)
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="col-span-2">
               <label className="label">Nombre</label>
               <input
@@ -291,7 +291,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
               />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               className="btn-primary flex-1 justify-center"
@@ -300,7 +300,7 @@ export default function Step3Inventario({ productos, onChange, catalog, showTess
             >
               <Plus size={15} />Agregar
             </button>
-            <button type="button" className="btn-ghost" onClick={() => setShowAddForm(false)}>
+            <button type="button" className="btn-ghost w-full sm:w-auto justify-center" onClick={() => setShowAddForm(false)}>
               Cancelar
             </button>
           </div>

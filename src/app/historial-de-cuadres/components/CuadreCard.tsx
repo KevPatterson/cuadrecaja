@@ -56,7 +56,7 @@ export default function CuadreCard({ cuadre, onClick }: Props) {
         <ChevronRight size={16} style={{ color: 'hsl(var(--text-muted))', flexShrink: 0, marginTop: 2 }} />
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div>
           <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>Ventas</p>
           <p className="font-mono-nums text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
@@ -69,7 +69,7 @@ export default function CuadreCard({ cuadre, onClick }: Props) {
             {cuadre.arqueo_total.toFixed(0)} CUP
           </p>
         </div>
-        <div>
+        <div className="col-span-2 sm:col-span-1">
           <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>Productos</p>
           <p className="font-mono-nums text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             {cuadre.productos.length}

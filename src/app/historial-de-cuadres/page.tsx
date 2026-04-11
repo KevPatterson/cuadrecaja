@@ -100,8 +100,8 @@ export default function HistorialPage() {
       <div className="max-w-lg mx-auto">
         {/* Header */}
         <div className="mb-6">
-          <div className="flex items-start justify-between gap-3">
-            <div>
+          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+            <div className="min-w-0">
               <h1 className="text-2xl font-bold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
                 Historial de Cuadres
               </h1>
@@ -110,13 +110,13 @@ export default function HistorialPage() {
               </p>
             </div>
             {/* Export / Import actions */}
-            <div className="flex gap-2 shrink-0">
+            <div className="flex gap-2 shrink-0 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={handleImportClick}
                 disabled={importing}
                 title="Importar CSV"
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
                 style={{
                   background: 'var(--bg)',
                   borderColor: 'var(--ink)',
@@ -137,7 +137,7 @@ export default function HistorialPage() {
                 type="button"
                 onClick={handleExportCSV}
                 title="Exportar CSV"
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
+                className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
                 style={{
                   background: 'var(--ink)',
                   borderColor: 'var(--ink)',

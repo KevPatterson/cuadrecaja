@@ -38,10 +38,10 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
       >
         {/* Header */}
         <div
-          className="flex items-center justify-between px-5 py-4 border-b shrink-0"
+          className="flex items-start justify-between gap-3 px-4 sm:px-5 py-4 border-b shrink-0"
           style={{ borderColor: 'hsl(var(--border-subtle))' }}
         >
-          <div>
+          <div className="min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
               <h2 className="text-base font-bold" style={{ color: 'hsl(var(--text-primary))' }}>
                 Cuadre — {formatDate(cuadre.fecha)}
@@ -53,7 +53,7 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
                 {sc.label}
               </span>
             </div>
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
               <span className="flex items-center gap-1 text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
                 <User size={11} />{cuadre.cajero}
               </span>
@@ -73,7 +73,7 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
         </div>
 
         {/* Scrollable content */}
-        <div className="overflow-y-auto scrollbar-thin flex-1 px-5 py-4 space-y-5">
+        <div className="overflow-y-auto scrollbar-thin flex-1 px-4 sm:px-5 py-4 space-y-5">
           {/* Difference highlight */}
           <div
             className="p-4 flex items-center justify-between"
@@ -89,7 +89,7 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
           </div>
 
           {/* Métricas clave */}
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
               { id: 'ventas-inv', icon: ShoppingBag, label: 'Ventas inventario', value: formatCUP(cuadre.ventas_inventario) },
               { id: 'ventas-dia', icon: CreditCard, label: 'Ventas totales', value: formatCUP(cuadre.ventas_total_dia) },
@@ -131,13 +131,13 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
                 {cuadre.productos.map((p, i) => (
                   <div
                     key={`modal-prod-${i}`}
-                    className="flex items-center justify-between px-4 py-2.5 text-sm"
+                    className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 px-4 py-2.5 text-sm"
                     style={{
                       background: i % 2 === 0 ? 'hsl(var(--surface-2))' : 'hsl(var(--surface))',
                       borderBottom: i < cuadre.productos.length - 1 ? '1px solid hsl(var(--border-subtle))' : 'none',
                     }}
                   >
-                    <div>
+                    <div className="min-w-0">
                       <p style={{ color: 'hsl(var(--text-primary))' }}>{p.nombre}</p>
                       <p className="text-xs font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
                         {p.stock_inicio} → {p.stock_fin} · {p.precio.toFixed(2)} CUP/u

@@ -109,14 +109,14 @@ export default function Step6Resumen({
       {/* Difference banner */}
       <div className="text-center py-1">
         <StatusIcon size={22} style={{ color: sc.color, margin: '0 auto 0.5rem auto' }} />
-        <span className={`result-stamp ${sc.className}`}>{sc.stamp}</span>
+        <span className={`result-stamp ${sc.className} text-sm sm:text-base px-4 sm:px-8 py-3 sm:py-4`}>{sc.stamp}</span>
         <p className="text-sm mt-2" style={{ color: sc.color }}>
           Diferencia: <span className="font-mono-nums font-medium">{diferencia >= 0 ? '+' : ''}{formatCUP(diferencia)}</span>
         </p>
       </div>
 
       {/* 4 metric cards */}
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {metrics.map(m => {
           const MIcon = m.icon;
           return (

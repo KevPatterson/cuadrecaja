@@ -187,7 +187,7 @@ export default function AjustesPage() {
         <ConfigNegocio config={config} onSaved={handleConfigSaved} />
 
         {/* Clave API de Gemini */}
-        <div className="card p-5 space-y-4">
+        <div className="card p-4 sm:p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Key size={18} style={{ color: 'var(--ink)' }} />
             <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
@@ -285,11 +285,11 @@ export default function AjustesPage() {
             onChange={handleImportBackupFile}
           />
 
-          <div className="flex gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <button
               type="button"
               onClick={handleDownloadBackup}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
               style={{
                 background: 'var(--ink)',
                 borderColor: 'var(--ink)',
@@ -302,7 +302,7 @@ export default function AjustesPage() {
             <button
               type="button"
               onClick={handleImportBackupClick}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
               style={{
                 background: 'var(--bg)',
                 borderColor: 'var(--ink)',
@@ -315,7 +315,7 @@ export default function AjustesPage() {
             <button
               type="button"
               onClick={() => setShowRestoreConfirm(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
+              className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
               style={{
                 background: 'var(--bg)',
                 borderColor: 'var(--ink)',
@@ -335,7 +335,7 @@ export default function AjustesPage() {
               <p className="text-sm font-semibold" style={{ color: 'var(--amber)' }}>
                 ¿Restaurar desde el último respaldo automático? Los datos actuales serán reemplazados.
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   onClick={handleRestoreBackup}
@@ -382,7 +382,7 @@ export default function AjustesPage() {
                   </p>
                 </div>
               )}
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   onClick={handleConfirmImport}
@@ -437,7 +437,7 @@ export default function AjustesPage() {
               <p className="text-sm font-semibold" style={{ color: 'var(--red)' }}>
                 ¿Estás seguro? Esta acción eliminará permanentemente todos los datos. No se puede deshacer.
               </p>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
                   type="button"
                   className="btn-danger flex-1 justify-center text-sm"

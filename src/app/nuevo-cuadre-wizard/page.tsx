@@ -240,7 +240,7 @@ export default function NuevoCuadrePage() {
 
         {/* Step content */}
         <div
-          className="ledger-shell p-5 mb-6"
+          className="ledger-shell p-4 sm:p-5 mb-6"
           style={{ minHeight: '400px' }}
         >
           {step === 1 && (

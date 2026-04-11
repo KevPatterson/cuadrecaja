@@ -27,10 +27,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       {/* Top bar */}
       <header className="sticky top-0 z-40 border-b-4" style={{ background: 'var(--ink)', borderColor: 'var(--red)' }}>
-        <div className="max-w-screen-lg mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
+        <div className="max-w-screen-lg mx-auto px-3 sm:px-4 min-h-14 py-2 flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
             <AppLogo size={32} />
-            <span className="app-title text-base" style={{ color: 'var(--bg)' }}>
+            <span className="app-title text-base truncate" style={{ color: 'var(--bg)' }}>
               {negocioNombre}
             </span>
           </div>
@@ -51,13 +51,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
-          <SyncIndicator />
+          <div className="shrink-0">
+            <SyncIndicator />
+          </div>
         </div>
       </header>
 
       {/* Main content */}
       <main className="flex-1 pb-20 md:pb-8">
-        <div className="max-w-screen-lg mx-auto px-4 py-6">
+        <div className="max-w-screen-lg mx-auto px-3 sm:px-4 py-5 sm:py-6">
           {children}
         </div>
       </main>

@@ -65,11 +65,11 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
   };
 
   return (
-    <div className="card p-5 space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
+    <div className="card p-4 sm:p-5 space-y-4">
+      <div className="flex items-start sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
           <Package size={18} style={{ color: 'var(--ink)' }} />
-          <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
+          <h2 className="text-base font-semibold truncate" style={{ color: 'hsl(var(--text-primary))' }}>
             Catálogo de productos
           </h2>
         </div>
@@ -99,7 +99,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
                   className="p-3 space-y-2 animate-fade-in"
                   style={{ background: 'var(--bg-alt)' }}
                 >
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <div className="col-span-2">
                       <label className="text-xs font-medium mb-1 block" style={{ color: 'hsl(var(--text-muted))' }}>
                         Nombre
@@ -137,7 +137,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
                     </button>
                     <button
                       type="button"
-                      className="btn-ghost text-sm py-2"
+                      className="btn-ghost text-sm py-2 shrink-0"
                       onClick={cancelEdit}
                     >
                       <X size={14} />
@@ -171,11 +171,11 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
                 </div>
               ) : (
                 <div
-                  className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/3"
+                  className="flex items-start sm:items-center justify-between gap-2 px-4 py-3 transition-colors hover:bg-white/3"
                   style={{ background: 'var(--bg)' }}
                 >
-                  <div>
-                    <p className="text-sm font-medium" style={{ color: 'hsl(var(--text-primary))' }}>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium truncate" style={{ color: 'hsl(var(--text-primary))' }}>
                       {prod.nombre}
                     </p>
                     <p className="font-mono-nums text-xs mt-0.5" style={{ color: 'hsl(var(--text-muted))' }}>
@@ -231,7 +231,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Nuevo producto
           </p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="col-span-2">
               <label className="label">Nombre del producto</label>
               <input
@@ -258,7 +258,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
               />
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               className="btn-primary flex-1 justify-center"
@@ -269,7 +269,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
             </button>
             <button
               type="button"
-              className="btn-ghost"
+              className="btn-ghost w-full sm:w-auto justify-center"
               onClick={() => { setShowAddForm(false); setNewNombre(''); setNewPrecio(''); }}
             >
               <X size={14} />

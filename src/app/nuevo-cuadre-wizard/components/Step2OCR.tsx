@@ -628,7 +628,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         {canUseSavedKey && (
           <button
             type="button"
-            className="text-xs mb-2 px-2 py-1 border transition-colors"
+            className="text-xs mb-2 px-2 py-1 border transition-colors w-full sm:w-auto"
             style={{
               color: 'var(--ink)',
               borderColor: 'var(--ink)',
@@ -794,7 +794,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
                 <p className="font-medium mb-2" style={{ color: 'hsl(var(--text-secondary))' }}>
                   {i + 1}. {p.nombre}
                 </p>
-                <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-3 gap-y-1 font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
                   <span>Stock inicial: {p.stock_inicio}</span>
                   <span>Stock final: {p.stock_fin}</span>
                   <span>Vendidos: {p.vendidos}</span>
