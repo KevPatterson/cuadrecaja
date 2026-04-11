@@ -239,14 +239,21 @@ async function scanImageWithTesseract(
   const result = await runOCRTesseract(imageDataUrl, onProgress);
 
   return result.productos
-    .map(p => ({
-      nombre: p.nombre || '',
-      precio: toNonNegativeNumber(p.precio) ?? 0,
-      stock_inicio: toNonNegativeInt(p.stock_fin) ?? 0,
-      stock_fin: 0,
-      vendidos: 0,
-      subtotal: 0,
-    }))
+    .map(p => {
+      const precio = toNonNegativeNumber(p.precio) ?? 0;
+      const stockInicio = toNonNegativeInt(p.stock_fin) ?? 0;
+      const stockFin = 0;
+      const vendidos = Math.max(0, stockInicio - stockFin);
+
+      return {
+        nombre: p.nombre || '',
+        precio,
+        stock_inicio: stockInicio,
+        stock_fin: stockFin,
+        vendidos,
+        subtotal: Number((vendidos * precio).toFixed(2)),
+      };
+    })
     .filter(p => p.nombre.length > 0);
 }
 
