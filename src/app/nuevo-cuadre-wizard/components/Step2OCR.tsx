@@ -533,10 +533,16 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
     }
   }, [normalizedSavedKey, hasSharedGeminiKey]);
 
+  const MAX_IMAGE_SIZE_MB = 4;
   const addFiles = (files: FileList | File[]) => {
     const newEntries: ImageEntry[] = [];
     Array.from(files).forEach(file => {
       if (!file.type.startsWith('image/')) return;
+      if (file.size > MAX_IMAGE_SIZE_MB * 1024 * 1024) {
+        toast.error(`La imagen "${file.name}" supera el límite de ${MAX_IMAGE_SIZE_MB}MB. Usa una imagen más pequeña.`);
+        setOcrStatus(`La imagen "${file.name}" supera el límite de ${MAX_IMAGE_SIZE_MB}MB. Usa una imagen más pequeña o reduce la resolución.`);
+        return;
+      }
       const preview = URL.createObjectURL(file);
       newEntries.push({ file, preview });
     });
@@ -840,6 +846,9 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         <label className="label">
           <span className="flex items-center gap-1.5"><Upload size={12} />Imágenes del cuadre anterior</span>
         </label>
+        <p className="text-xs mb-2" style={{ color: 'hsl(var(--text-muted))' }}>
+          Imágenes de hasta 4 MB. Si tu imagen es mayor, redúcela o toma una foto con menor resolución.
+        </p>
 
         {/* Drop zone */}
         <div
