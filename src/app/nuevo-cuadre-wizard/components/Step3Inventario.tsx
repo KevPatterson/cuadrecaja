@@ -18,13 +18,16 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
 
   const ventasInventario = productos.reduce((sum, p) => sum + p.subtotal, 0);
 
+  const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
+
   const updateProduct = (idx: number, field: keyof ProductoLine, value: number | string) => {
     const updated = productos.map((p, i) => {
       if (i !== idx) return p;
       const next = { ...p, [field]: value };
-      if (field === 'stock_inicio' || field === 'stock_fin') {
+      if (field === 'stock_inicio' || field === 'stock_fin' || field === 'precio') {
+        next.precio = roundMoney(Number(next.precio) || 0);
         next.vendidos = Math.max(0, (Number(next.stock_inicio) || 0) - (Number(next.stock_fin) || 0));
-        next.subtotal = next.vendidos * next.precio;
+        next.subtotal = roundMoney(next.vendidos * (Number(next.precio) || 0));
       }
       return next;
     });
@@ -132,9 +135,6 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
                   <p className="text-sm font-semibold truncate" style={{ color: 'hsl(var(--text-primary))' }}>
                     {prod.nombre}
                   </p>
-                  <p className="text-xs font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
-                    {prod.precio.toFixed(2)} CUP/u
-                  </p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div
@@ -160,6 +160,21 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-xs font-medium mb-1 block" style={{ color: 'hsl(var(--text-muted))' }}>
+                    Precio (CUP)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    step={0.01}
+                    className="input-base text-center font-mono-nums text-sm"
+                    value={prod.precio || ''}
+                    onChange={e => updateProduct(idx, 'precio', roundMoney(parseFloat(e.target.value) || 0))}
+                    onWheel={e => e.currentTarget.blur()}
+                    placeholder="0.00"
+                  />
+                </div>
                 <div>
                   <label className="text-xs font-medium mb-1 block" style={{ color: 'hsl(var(--text-muted))' }}>
                     Stock inicio
