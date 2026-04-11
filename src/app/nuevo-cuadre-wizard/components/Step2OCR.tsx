@@ -52,6 +52,43 @@ function isGeminiDailyLimitError(message: string): boolean {
   );
 }
 
+function getGeminiGuidance(message: string): string | null {
+  const normalized = message.toLowerCase();
+
+  if (
+    normalized.includes('api_key_invalid') ||
+    normalized.includes('api key not valid') ||
+    normalized.includes('invalid api key')
+  ) {
+    return 'La API key de Gemini no es valida. Verifica la clave o crea una nueva en Google AI Studio.';
+  }
+
+  if (
+    normalized.includes('api_key_http_referrer_blocked') ||
+    normalized.includes('referer')
+  ) {
+    return 'La API key esta restringida por dominio. Agrega el dominio desplegado en los referrers permitidos de Google Cloud.';
+  }
+
+  if (
+    normalized.includes('permission_denied') ||
+    normalized.includes('service_disabled')
+  ) {
+    return 'La API key no tiene permiso para Gemini. Habilita Generative Language API en el proyecto de Google Cloud.';
+  }
+
+  if (
+    normalized.includes('payload') ||
+    normalized.includes('request too large') ||
+    normalized.includes('too large') ||
+    normalized.includes('entity too large')
+  ) {
+    return 'La imagen es demasiado grande para Gemini. Comprime la imagen o usa una foto de menor resolucion.';
+  }
+
+  return null;
+}
+
 declare global {
   interface Window {
     Tesseract?: TesseractGlobal;
@@ -567,9 +604,18 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         errors++;
         const msg = err instanceof Error ? err.message : 'Error desconocido';
 
-        if (geminiEnabled && useSharedKey && isGeminiDailyLimitError(msg)) {
-          setOcrStatus('La clave compartida de Gemini alcanzó el limite diario. Cambia a Tesseract, usa tu propia API key o espera al siguiente dia.');
-          toast.warning('Limite diario alcanzado en clave compartida. Usa Tesseract, tu API key o espera al proximo dia.');
+        if (geminiEnabled) {
+          if (useSharedKey && isGeminiDailyLimitError(msg)) {
+            const dailyLimitMsg = 'La clave compartida de Gemini alcanzó el limite diario. Cambia a Tesseract, usa tu propia API key o espera al siguiente dia.';
+            setOcrStatus(dailyLimitMsg);
+            toast.warning('Limite diario alcanzado en clave compartida. Usa Tesseract, tu API key o espera al proximo dia.');
+          } else {
+            const guidance = getGeminiGuidance(msg);
+            if (guidance) {
+              setOcrStatus(guidance);
+              toast.warning(guidance);
+            }
+          }
         }
 
         toast.error(`Error en imagen ${i + 1}: ${msg}`);
@@ -695,6 +741,16 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         <label className="label">
           <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>
         </label>
+        {!hasSharedGeminiKey && !normalizedCurrentKey && (
+          <div
+            className="p-3 mb-2"
+            style={{ background: 'var(--bg-alt)', border: '2px solid var(--amber)' }}
+          >
+            <p className="text-xs" style={{ color: 'var(--amber)' }}>
+              En este despliegue no hay clave compartida configurada. Define NEXT_PUBLIC_GEMINI_SHARED_KEY en tu plataforma y vuelve a desplegar.
+            </p>
+          </div>
+        )}
         {hasSharedGeminiKey && (
           <label className="flex items-center gap-2 text-xs mb-2" style={{ color: 'hsl(var(--text-secondary))' }}>
             <input
