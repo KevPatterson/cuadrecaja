@@ -88,7 +88,7 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
             <Scale size={28} style={{ color: sc.color, opacity: 0.5 }} />
           </div>
 
-          {/* Key metrics */}
+          {/* Métricas clave */}
           <div className="grid grid-cols-2 gap-3">
             {[
               { id: 'ventas-inv', icon: ShoppingBag, label: 'Ventas inventario', value: formatCUP(cuadre.ventas_inventario) },

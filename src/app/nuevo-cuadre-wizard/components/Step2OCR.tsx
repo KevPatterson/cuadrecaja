@@ -230,7 +230,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         </p>
       </div>
 
-      {/* API Key */}
+      {/* Clave API */}
       <div>
         <label className="label">
           <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>

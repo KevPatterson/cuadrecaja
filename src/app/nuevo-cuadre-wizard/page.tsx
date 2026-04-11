@@ -104,7 +104,7 @@ export default function NuevoCuadrePage() {
     if (apiKey) {
       const cfg = getConfig();
       cfg.gemini_key = apiKey;
-      // Backend integration point: persist API key to config
+      // Punto de integración backend: persistir clave API en configuración
       localStorage.setItem('mipyme_config', JSON.stringify(cfg));
     }
   }, [step, turnoData, productos, transferencias, devoluciones, gastos, denomCounts, observaciones, apiKey]);

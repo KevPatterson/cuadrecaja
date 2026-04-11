@@ -28,12 +28,12 @@ export default function AjustesPage() {
     if (cfg.gemini_key) setApiKey(cfg.gemini_key);
     setCatalog(getCatalog());
 
-    // Start auto-backup and refresh backup timestamp display
+    // Iniciar respaldo automático y refrescar visualización del último respaldo
     const stopBackup = startAutoBackup();
     const snapshot = getBackupSnapshot();
     if (snapshot) setBackupTs(snapshot.ts);
 
-    // Refresh backup timestamp every minute
+    // Refrescar marca de tiempo del respaldo cada minuto
     const refreshInterval = setInterval(() => {
       const s = getBackupSnapshot();
       if (s) setBackupTs(s.ts);
@@ -78,7 +78,7 @@ export default function AjustesPage() {
     if (ok) {
       toast.success('Datos restaurados desde la copia de seguridad.');
       setShowRestoreConfirm(false);
-      // Reload page state
+      // Recargar estado de la página
       const cfg = getConfig();
       setConfig(cfg);
       if (cfg.gemini_key) setApiKey(cfg.gemini_key);
@@ -126,7 +126,7 @@ export default function AjustesPage() {
         {/* Config negocio */}
         <ConfigNegocio config={config} onSaved={handleConfigSaved} />
 
-        {/* API Key Gemini */}
+        {/* Clave API de Gemini */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Key size={18} style={{ color: 'var(--ink)' }} />
@@ -186,7 +186,7 @@ export default function AjustesPage() {
         {/* Catalog */}
         <CatalogoCRUD catalog={catalog} onCatalogChange={handleCatalogChange} />
 
-        {/* Backup & Recovery */}
+        {/* Respaldo y recuperación */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
             <ShieldCheck size={18} style={{ color: 'var(--ink)' }} />
@@ -195,7 +195,7 @@ export default function AjustesPage() {
             </h2>
           </div>
 
-          {/* Auto-backup status */}
+          {/* Estado del respaldo automático */}
           <div
             className="flex items-center gap-3 px-3 py-2.5"
             style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
