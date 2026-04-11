@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 
 interface Props {
   apiKey: string;
+  savedApiKey?: string;
   onApiKeyChange: (k: string) => void;
   onProductsExtracted: (products: ProductoLine[]) => void;
   onSkip: () => void;
@@ -136,13 +137,17 @@ Reglas obligatorias:
   });
 }
 
-export default function Step2OCR({ apiKey, onApiKeyChange, onProductsExtracted, onSkip }: Props) {
+export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProductsExtracted, onSkip }: Props) {
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ current: number; total: number } | null>(null);
   const [showKey, setShowKey] = useState(false);
   const [result, setResult] = useState<ProductoLine[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const normalizedCurrentKey = apiKey.trim();
+  const normalizedSavedKey = (savedApiKey || '').trim();
+  const canUseSavedKey = normalizedSavedKey.length > 0 && normalizedSavedKey !== normalizedCurrentKey;
 
   const addFiles = (files: FileList | File[]) => {
     const newEntries: ImageEntry[] = [];
@@ -233,6 +238,23 @@ export default function Step2OCR({ apiKey, onApiKeyChange, onProductsExtracted, 
         <p className="text-xs mb-1.5" style={{ color: 'hsl(var(--text-muted))' }}>
           Se guarda localmente. Obtenla gratis en aistudio.google.com → Get API key
         </p>
+        {canUseSavedKey && (
+          <button
+            type="button"
+            className="text-xs mb-2 px-2 py-1 rounded-md border transition-colors"
+            style={{
+              color: 'hsl(var(--primary-light))',
+              borderColor: 'hsl(var(--primary) / 0.35)',
+              background: 'hsl(var(--primary-dim))',
+            }}
+            onClick={() => {
+              onApiKeyChange(normalizedSavedKey);
+              toast.success('API key guardada cargada.');
+            }}
+          >
+            Usar API key guardada
+          </button>
+        )}
         <div className="relative">
           <input
             type={showKey ? 'text' : 'password'}

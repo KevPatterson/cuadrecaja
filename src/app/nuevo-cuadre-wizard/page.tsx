@@ -227,6 +227,7 @@ export default function NuevoCuadrePage() {
           {step === 2 && (
             <Step2OCR
               apiKey={apiKey}
+              savedApiKey={config.gemini_key}
               onApiKeyChange={setApiKey}
               onProductsExtracted={handleOCRProducts}
               onSkip={() => { setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
