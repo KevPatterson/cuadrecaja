@@ -36,7 +36,7 @@ type TesseractGlobal = {
       preserve_interword_spaces?: string;
       tessedit_char_whitelist?: string;
     }
-  ) => Promise<{ data: { text: string } }>;
+  ) => Promise<{ data: { text: string; confidence?: number } }>;
 };
 
 declare global {
@@ -98,7 +98,11 @@ function parseTableFromRawText(rawText: string): { productos: Array<{ nombre: st
 
     const precio = numbers[0] || 0;
     let stock_fin = 0;
-    if (numbers.length >= 4) {
+    if (numbers.length >= 5) {
+      stock_fin = numbers[2] || 0;
+    } else if (numbers.length === 4) {
+      stock_fin = numbers[2] || 0;
+    } else if (numbers.length === 3) {
       stock_fin = numbers[2] || 0;
     } else if (numbers.length >= 2) {
       stock_fin = numbers[1] || 0;
@@ -117,12 +121,30 @@ function parseTableFromRawText(rawText: string): { productos: Array<{ nombre: st
   return { productos };
 }
 
-function preprocessImage(imageDataUrl: string): Promise<string> {
+type PreprocessOptions = {
+  threshold?: number;
+  contrast?: number;
+  scale?: number;
+};
+
+type PreprocessedVariant = {
+  label: string;
+  dataUrl: string;
+};
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value));
+}
+
+function preprocessImage(imageDataUrl: string, options?: PreprocessOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => {
       const canvas = document.createElement('canvas');
-      const scale = 2;
+      const scale = options?.scale ?? 2;
+      const contrast = options?.contrast ?? 1.3;
+      const threshold = options?.threshold;
+
       canvas.width = img.width * scale;
       canvas.height = img.height * scale;
 
@@ -139,10 +161,18 @@ function preprocessImage(imageDataUrl: string): Promise<string> {
 
       for (let i = 0; i < data.length; i += 4) {
         const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-        const bw = gray < 140 ? 0 : 255;
-        data[i] = bw;
-        data[i + 1] = bw;
-        data[i + 2] = bw;
+        const contrasted = clamp((gray - 128) * contrast + 128, 0, 255);
+
+        if (typeof threshold === 'number') {
+          const bw = contrasted < threshold ? 0 : 255;
+          data[i] = bw;
+          data[i + 1] = bw;
+          data[i + 2] = bw;
+        } else {
+          data[i] = contrasted;
+          data[i + 1] = contrasted;
+          data[i + 2] = contrasted;
+        }
       }
 
       ctx.putImageData(imageData, 0, 0);
@@ -153,6 +183,37 @@ function preprocessImage(imageDataUrl: string): Promise<string> {
   });
 }
 
+async function buildPreprocessedVariants(imageDataUrl: string): Promise<PreprocessedVariant[]> {
+  const [highContrastBW, darkerBW, grayscale] = await Promise.all([
+    preprocessImage(imageDataUrl, { threshold: 140, contrast: 1.35, scale: 2 }),
+    preprocessImage(imageDataUrl, { threshold: 120, contrast: 1.5, scale: 2 }),
+    preprocessImage(imageDataUrl, { contrast: 1.2, scale: 2 }),
+  ]);
+
+  return [
+    { label: 'bw-140', dataUrl: highContrastBW },
+    { label: 'bw-120', dataUrl: darkerBW },
+    { label: 'gray', dataUrl: grayscale },
+  ];
+}
+
+function scoreParsedProducts(
+  productos: Array<{ nombre: string; precio: number; stock_fin: number }>,
+  confidence?: number
+): number {
+  if (productos.length === 0) return -1;
+
+  const structured = productos.reduce((acc, prod) => {
+    const hasName = prod.nombre.trim().length >= 2 ? 1 : 0;
+    const hasPrice = prod.precio > 0 ? 1 : 0;
+    const hasStock = prod.stock_fin >= 0 ? 1 : 0;
+    return acc + hasName + hasPrice + hasStock;
+  }, 0);
+
+  const confidenceBoost = typeof confidence === 'number' ? Math.max(0, confidence) / 10 : 0;
+  return productos.length * 10 + structured + confidenceBoost;
+}
+
 async function runOCRTesseract(
   imageDataUrl: string,
   onProgress?: (pct: number) => void
@@ -161,26 +222,45 @@ async function runOCRTesseract(
     throw new Error('No se pudo cargar Tesseract. Verifica tu conexion y recarga la pagina.');
   }
 
-  const processedImage = await preprocessImage(imageDataUrl);
+  const variants = await buildPreprocessedVariants(imageDataUrl);
+  const psmModes = ['6', '4'];
+  const totalPasses = variants.length * psmModes.length;
 
-  const {
-    data: { text }
-  } = await window.Tesseract.recognize(processedImage, 'spa', {
-    logger: message => {
-      if (message.status === 'recognizing text' && typeof message.progress === 'number') {
-        const pct = Math.round(message.progress * 100);
-        const statusEl = document.getElementById('ocr-status');
-        if (statusEl) statusEl.textContent = `Analizando... ${pct}%`;
-        onProgress?.(pct);
+  let bestProductos: Array<{ nombre: string; precio: number; stock_fin: number }> = [];
+  let bestScore = -1;
+
+  for (let vIdx = 0; vIdx < variants.length; vIdx++) {
+    for (let pIdx = 0; pIdx < psmModes.length; pIdx++) {
+      const passIndex = vIdx * psmModes.length + pIdx;
+      const baseProgress = passIndex / totalPasses;
+
+      const { data } = await window.Tesseract.recognize(variants[vIdx].dataUrl, 'spa', {
+        logger: message => {
+          if (message.status === 'recognizing text' && typeof message.progress === 'number') {
+            const overall = Math.round((baseProgress + (message.progress / totalPasses)) * 100);
+            const statusEl = document.getElementById('ocr-status');
+            if (statusEl) statusEl.textContent = `Analizando... ${overall}%`;
+            onProgress?.(overall);
+          }
+        },
+        tessedit_pageseg_mode: psmModes[pIdx],
+        tessedit_ocr_engine_mode: '1',
+        preserve_interword_spaces: '1',
+        tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzáéíóúüñÁÉÍÓÚÜÑ0123456789.,: -/'
+      });
+
+      const parsed = parseTableFromRawText(data.text);
+      const score = scoreParsedProducts(parsed.productos, data.confidence);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestProductos = parsed.productos;
       }
-    },
-    tessedit_pageseg_mode: '6',
-    tessedit_ocr_engine_mode: '1',
-    preserve_interword_spaces: '1',
-    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzáéíóúüñÁÉÍÓÚÜÑ0123456789.,: -/'
-  });
+    }
+  }
 
-  return parseTableFromRawText(text);
+  onProgress?.(100);
+  return { productos: bestProductos };
 }
 
 async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
