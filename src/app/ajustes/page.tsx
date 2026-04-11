@@ -25,7 +25,7 @@ export default function AjustesPage() {
   useEffect(() => {
     const cfg = getConfig();
     setConfig(cfg);
-    if (cfg.anthropic_key) setApiKey(cfg.anthropic_key);
+    if (cfg.gemini_key) setApiKey(cfg.gemini_key);
     setCatalog(getCatalog());
 
     // Start auto-backup and refresh backup timestamp display
@@ -56,7 +56,7 @@ export default function AjustesPage() {
   const handleSaveApiKey = async () => {
     setSavingKey(true);
     await new Promise(r => setTimeout(r, 300));
-    const updated = { ...config, anthropic_key: apiKey.trim() };
+    const updated = { ...config, gemini_key: apiKey.trim() };
     saveConfig(updated);
     setConfig(updated);
     toast.success('API key guardada correctamente.');
@@ -81,7 +81,7 @@ export default function AjustesPage() {
       // Reload page state
       const cfg = getConfig();
       setConfig(cfg);
-      if (cfg.anthropic_key) setApiKey(cfg.anthropic_key);
+      if (cfg.gemini_key) setApiKey(cfg.gemini_key);
       setCatalog(getCatalog());
     } else {
       toast.error('No se encontró ninguna copia de seguridad para restaurar.');
@@ -126,31 +126,31 @@ export default function AjustesPage() {
         {/* Config negocio */}
         <ConfigNegocio config={config} onSaved={handleConfigSaved} />
 
-        {/* API Key Anthropic */}
+        {/* API Key Gemini */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
             <Key size={18} style={{ color: 'hsl(var(--primary-light))' }} />
             <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
-              API Key de Anthropic (OCR)
+              API Key de Google Gemini (OCR)
             </h2>
           </div>
           <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
             Necesaria para el paso de OCR. Se guarda únicamente en este dispositivo. Obtén tu key en{' '}
             <a
-              href="https://console.anthropic.com"
+              href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 transition-colors"
               style={{ color: 'hsl(var(--primary-light))' }}
             >
-              console.anthropic.com
+              aistudio.google.com
             </a>
           </p>
           <div className="relative">
             <input
               type={showKey ? 'text' : 'password'}
               className="input-base pr-10"
-              placeholder="sk-ant-..."
+              placeholder="AIza..."
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
             />

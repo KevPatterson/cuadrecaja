@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Save, Building2, Users, DollarSign, Plus, X } from 'lucide-react';
 import type { MipymeConfig } from '@/lib/storage';
 import { saveConfig } from '@/lib/storage';
@@ -16,6 +16,12 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
   const [cajeros, setCajeros] = useState<string[]>(config.cajeros || []);
   const [newCajero, setNewCajero] = useState('');
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setNombre(config.nombre || 'Mi Negocio');
+    setFondoBase((config.fondo_base ?? 0).toString());
+    setCajeros(config.cajeros || []);
+  }, [config]);
 
   const addCajero = () => {
     const trimmed = newCajero.trim();

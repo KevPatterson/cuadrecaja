@@ -53,12 +53,34 @@ const KEYS = {
   draft: 'mipyme_draft',
 } as const;
 
+function normalizeConfig(raw: unknown): MipymeConfig {
+  const base: MipymeConfig = { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
+  if (!raw || typeof raw !== 'object') return base;
+
+  const record = raw as Record<string, unknown>;
+  const nombre = typeof record.nombre === 'string' && record.nombre.trim()
+    ? record.nombre
+    : base.nombre;
+  const fondo_base = typeof record.fondo_base === 'number' && Number.isFinite(record.fondo_base)
+    ? record.fondo_base
+    : base.fondo_base;
+  const cajeros = Array.isArray(record.cajeros)
+    ? record.cajeros.filter((c): c is string => typeof c === 'string' && c.trim().length > 0)
+    : base.cajeros;
+
+  const geminiFromGemini = typeof record.gemini_key === 'string' ? record.gemini_key.trim() : '';
+  const geminiFromAnthropicLegacy = typeof record.anthropic_key === 'string' ? record.anthropic_key.trim() : '';
+  const gemini_key = geminiFromGemini || geminiFromAnthropicLegacy || undefined;
+
+  return { nombre, fondo_base, cajeros, gemini_key };
+}
+
 export function getConfig(): MipymeConfig {
   if (typeof window === 'undefined') return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
   try {
     const raw = localStorage.getItem(KEYS.config);
     if (!raw) return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
-    return JSON.parse(raw);
+    return normalizeConfig(JSON.parse(raw));
   } catch {
     return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
   }
@@ -66,7 +88,7 @@ export function getConfig(): MipymeConfig {
 
 export function saveConfig(config: MipymeConfig): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEYS.config, JSON.stringify(config));
+  localStorage.setItem(KEYS.config, JSON.stringify(normalizeConfig(config)));
 }
 
 export function getCatalog(): CatalogProduct[] {
