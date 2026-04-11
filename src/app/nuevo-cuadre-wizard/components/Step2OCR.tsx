@@ -16,6 +16,28 @@ interface ImageEntry {
   preview: string;
 }
 
+function toNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(/\s+/g, '').replace(',', '.');
+    const parsed = Number(normalized);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function toNonNegativeInt(value: unknown): number | null {
+  const num = toNumber(value);
+  if (num == null) return null;
+  return Math.max(0, Math.round(num));
+}
+
+function toNonNegativeNumber(value: unknown): number | null {
+  const num = toNumber(value);
+  if (num == null) return null;
+  return Math.max(0, num);
+}
+
 async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -35,7 +57,21 @@ async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
                 parts: [
                   { inline_data: { mime_type: mimeType, data: base64ImageData } },
                   {
-                    text: `Eres un asistente para un punto de venta en Cuba. Analiza esta imagen de un cuadre de caja del día anterior. Extrae todos los productos con sus existencias finales (stock al cierre) y precios. Devuelve SOLO un JSON válido con este formato exacto, sin markdown ni explicaciones: {"productos":[{"nombre":"string","precio":number,"stock_fin":number}]} Si no puedes leer algún campo, pon null. Si no hay productos visibles, devuelve {"productos":[]}.`
+                    text: `Actua como extractor OCR estructurado para un punto de venta en Cuba.
+
+Analiza la imagen del cuadre de caja y extrae por cada producto: nombre, precio, stock inicial, stock final, vendidos y total.
+
+Responde UNICAMENTE con JSON valido (sin markdown, sin comentarios, sin texto extra) usando EXACTAMENTE este esquema:
+{"productos":[{"nombre":"string","precio":number|null,"stock_inicio":number|null,"stock_fin":number|null,"vendidos":number|null,"total":number|null}]}
+
+Reglas obligatorias:
+1) No agregues claves fuera de: productos, nombre, precio, stock_inicio, stock_fin, vendidos, total.
+2) Si un valor no es legible o es ambiguo, usa null.
+3) precio y total deben ser numeros (sin simbolos de moneda ni separadores de miles). Si no se pueden inferir con certeza, null.
+4) stock_inicio, stock_fin y vendidos deben ser numeros enteros. Si no se pueden inferir con certeza, null.
+5) No inventes productos. Solo incluye los que aparezcan visibles en la imagen.
+6) Si no hay productos visibles, responde exactamente: {"productos":[]}.
+7) Devuelve un solo objeto JSON raiz.`
                   }
                 ]
               }]
@@ -54,17 +90,43 @@ async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
         const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
         if (!jsonMatch) throw new Error('No se pudo extraer JSON de la respuesta');
 
-        const parsed = JSON.parse(jsonMatch[0]);
-        const products: ProductoLine[] = (parsed.productos || []).map(
-          (p: { nombre: string; precio: number | null; stock_fin: number | null }) => ({
-            nombre: p.nombre || '',
-            precio: p.precio ?? 0,
-            stock_inicio: p.stock_fin ?? 0,
-            stock_fin: p.stock_fin ?? 0,
-            vendidos: 0,
-            subtotal: 0,
-          })
+        const parsed: { productos?: unknown } = JSON.parse(jsonMatch[0]);
+        const rawProducts: Record<string, unknown>[] = (Array.isArray(parsed.productos) ? parsed.productos : []).filter(
+          (item: unknown): item is Record<string, unknown> => typeof item === 'object' && item !== null
         );
+
+        const products: ProductoLine[] = rawProducts.map((p: Record<string, unknown>) => {
+          const nombre = typeof p.nombre === 'string' ? p.nombre.trim() : '';
+          const precio = toNonNegativeNumber(p.precio) ?? 0;
+
+          const stockInicioParsed = toNonNegativeInt(p.stock_inicio);
+          const stockFinParsed = toNonNegativeInt(p.stock_fin);
+          const vendidosParsed = toNonNegativeInt(p.vendidos);
+          const totalParsed = toNonNegativeNumber(p.total);
+
+          const stock_inicio = stockInicioParsed ?? 0;
+          const stock_fin = stockFinParsed ?? 0;
+
+          let vendidos = vendidosParsed;
+          if (vendidos == null && stockInicioParsed != null && stockFinParsed != null) {
+            vendidos = Math.max(0, stockInicioParsed - stockFinParsed);
+          }
+          if (vendidos == null) vendidos = 0;
+
+          let subtotal = totalParsed;
+          if (subtotal == null) {
+            subtotal = precio * vendidos;
+          }
+
+          return {
+            nombre,
+            precio,
+            stock_inicio,
+            stock_fin,
+            vendidos,
+            subtotal,
+          };
+        }).filter((p: ProductoLine) => p.nombre.length > 0);
         resolve(products);
       } catch (e) {
         reject(e);
@@ -296,11 +358,20 @@ export default function Step2OCR({ apiKey, onApiKeyChange, onProductsExtracted, 
           </div>
           <div className="space-y-1 max-h-40 overflow-y-auto scrollbar-thin">
             {result.map((p, i) => (
-              <div key={`ocr-result-${i}`} className="flex justify-between text-xs">
-                <span style={{ color: 'hsl(var(--text-secondary))' }}>{i + 1}. {p.nombre}</span>
-                <span className="font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
-                  Stock: {p.stock_inicio}
-                </span>
+              <div
+                key={`ocr-result-${i}`}
+                className="rounded-lg p-2.5 text-xs"
+                style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+              >
+                <p className="font-medium mb-2" style={{ color: 'hsl(var(--text-secondary))' }}>
+                  {i + 1}. {p.nombre}
+                </p>
+                <div className="grid grid-cols-2 gap-x-3 gap-y-1 font-mono-nums" style={{ color: 'hsl(var(--text-muted))' }}>
+                  <span>Stock inicial: {p.stock_inicio}</span>
+                  <span>Stock final: {p.stock_fin}</span>
+                  <span>Vendidos: {p.vendidos}</span>
+                  <span>Total: {p.subtotal.toFixed(2)}</span>
+                </div>
               </div>
             ))}
           </div>
