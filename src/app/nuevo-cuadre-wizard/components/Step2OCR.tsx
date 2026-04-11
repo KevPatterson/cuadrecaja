@@ -321,7 +321,6 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
           ref={fileRef}
           type="file"
           accept="image/*"
-          capture="environment"
           multiple
           className="hidden"
           onChange={e => { if (e.target.files) { addFiles(e.target.files); e.target.value = ''; } }}
