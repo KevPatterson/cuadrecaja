@@ -65,12 +65,12 @@ export default function SyncIndicator() {
       {justReconnected ? (
         <>
           <Wifi size={15} />
-          Conexión restaurada — datos sincronizados
+          Conexion restaurada - tus datos locales siguen disponibles
         </>
       ) : (
         <>
           <WifiOff size={15} />
-          Sin conexión — trabajando en modo offline
+          Sin conexion - trabajando en modo offline
         </>
       )}
     </div>

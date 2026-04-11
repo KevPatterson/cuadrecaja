@@ -180,6 +180,10 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       toast.error('Se requiere al menos una imagen y la clave API de Google Gemini.');
       return;
     }
+    if (!navigator.onLine) {
+      toast.error('Sin conexion: el OCR requiere internet. Puedes saltar este paso y continuar manualmente.');
+      return;
+    }
     setLoading(true);
     setResult(null);
     const allProducts: ProductoLine[] = [];

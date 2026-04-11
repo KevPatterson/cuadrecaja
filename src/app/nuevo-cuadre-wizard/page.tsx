@@ -10,6 +10,7 @@ import Step5Arqueo from './components/Step5Arqueo';
 import Step6Resumen from './components/Step6Resumen';
 import {
   getConfig, getCatalog, saveCuadre, saveDraft, getDraft, clearDraft,
+  saveConfig,
   generateId, getDiferenciaStatus, DENOMINATIONS,
   type MipymeConfig, type CatalogProduct, type ProductoLine, type Gasto, type Cuadre,
 } from '@/lib/storage';
@@ -107,13 +108,36 @@ export default function NuevoCuadrePage() {
     if (apiKey) {
       const cfg = getConfig();
       cfg.gemini_key = apiKey;
-      // Punto de integración backend: persistir clave API en configuración
-      localStorage.setItem('mipyme_config', JSON.stringify(cfg));
+      saveConfig(cfg);
     }
   }, [step, turnoData, productos, transferencias, devoluciones, gastos, denomCounts, observaciones, apiKey]);
 
   useEffect(() => {
     persistDraft();
+  }, [persistDraft]);
+
+  useEffect(() => {
+    const persistNow = () => {
+      persistDraft();
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'hidden') {
+        persistNow();
+      }
+    };
+
+    window.addEventListener('offline', persistNow);
+    window.addEventListener('online', persistNow);
+    window.addEventListener('beforeunload', persistNow);
+    document.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('offline', persistNow);
+      window.removeEventListener('online', persistNow);
+      window.removeEventListener('beforeunload', persistNow);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
   }, [persistDraft]);
 
   const canProceed = (): boolean => {
