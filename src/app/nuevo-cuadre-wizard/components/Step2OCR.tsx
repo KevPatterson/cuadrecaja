@@ -236,7 +236,18 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
           <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>
         </label>
         <p className="text-xs mb-1.5" style={{ color: 'hsl(var(--text-muted))' }}>
-          Se guarda localmente. Obténla gratis en aistudio.google.com → Obtener clave API
+          Se guarda localmente. Obténla gratis en {' '}
+          <a
+            href="https://aistudio.google.com/app/apikey"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="underline underline-offset-2 transition-colors"
+            style={{ color: 'var(--ink)' }}
+          >
+            aistudio.google.com
+          </a>
+          {' '}
+          → Obtener clave API
         </p>
         {canUseSavedKey && (
           <button
