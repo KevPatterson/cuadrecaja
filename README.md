@@ -132,7 +132,9 @@ El borrador tambien se restaura para continuar donde quedaste.
 
 ## OCR (Paso 2)
 
-- Requiere internet y API key de Google Gemini.
+- Requiere internet.
+- Puede usar API key propia de Google Gemini o una clave compartida con limite diario (si se configura `NEXT_PUBLIC_GEMINI_SHARED_KEY`).
+- Si la clave compartida alcanza el limite diario, puedes cambiar a Tesseract, usar una API key propia o esperar al siguiente dia.
 - Si no hay conexion, el paso OCR bloquea escaneo y permite continuar manualmente.
 - La clave API se guarda localmente en configuracion del dispositivo.
 

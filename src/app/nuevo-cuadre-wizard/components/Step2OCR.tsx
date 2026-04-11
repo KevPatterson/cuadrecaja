@@ -39,6 +39,19 @@ type TesseractGlobal = {
   ) => Promise<{ data: { text: string; confidence?: number } }>;
 };
 
+const SHARED_GEMINI_KEY = (process.env.NEXT_PUBLIC_GEMINI_SHARED_KEY || '').trim();
+
+function isGeminiDailyLimitError(message: string): boolean {
+  const normalized = message.toLowerCase();
+  return (
+    normalized.includes('resource_exhausted') ||
+    normalized.includes('quota') ||
+    normalized.includes('rate limit') ||
+    normalized.includes('too many requests') ||
+    normalized.includes('429')
+  );
+}
+
 declare global {
   interface Window {
     Tesseract?: TesseractGlobal;
@@ -103,7 +116,21 @@ function parseTableFromRawText(rawText: string): { productos: Array<{ nombre: st
     } else if (numbers.length === 4) {
       stock_fin = numbers[2] || 0;
     } else if (numbers.length === 3) {
-      stock_fin = numbers[2] || 0;
+      const second = numbers[1] || 0;
+      const third = numbers[2] || 0;
+      const secondIsIntLike = Math.abs(second - Math.round(second)) < 0.01;
+      const thirdIsIntLike = Math.abs(third - Math.round(third)) < 0.01;
+
+      if (secondIsIntLike && !thirdIsIntLike) {
+        stock_fin = second;
+      } else if (!secondIsIntLike && thirdIsIntLike) {
+        stock_fin = third;
+      } else if (third >= Math.max(30, precio * 2) && second < third) {
+        // En muchos cuadres el tercer numero puede ser total monetario.
+        stock_fin = second;
+      } else {
+        stock_fin = third;
+      }
     } else if (numbers.length >= 2) {
       stock_fin = numbers[1] || 0;
     }
@@ -119,6 +146,31 @@ function parseTableFromRawText(rawText: string): { productos: Array<{ nombre: st
   }
 
   return { productos };
+}
+
+function dedupeProducts(
+  productos: Array<{ nombre: string; precio: number; stock_fin: number }>
+): Array<{ nombre: string; precio: number; stock_fin: number }> {
+  const byName = new Map<string, { nombre: string; precio: number; stock_fin: number }>();
+
+  for (const prod of productos) {
+    const key = prod.nombre.toLowerCase().replace(/\s+/g, ' ').trim();
+    if (!key) continue;
+
+    const current = byName.get(key);
+    if (!current) {
+      byName.set(key, prod);
+      continue;
+    }
+
+    const currentScore = (current.precio > 0 ? 1 : 0) + (current.stock_fin >= 0 ? 1 : 0);
+    const nextScore = (prod.precio > 0 ? 1 : 0) + (prod.stock_fin >= 0 ? 1 : 0);
+    if (nextScore > currentScore) {
+      byName.set(key, prod);
+    }
+  }
+
+  return Array.from(byName.values());
 }
 
 type PreprocessOptions = {
@@ -203,15 +255,23 @@ function scoreParsedProducts(
 ): number {
   if (productos.length === 0) return -1;
 
-  const structured = productos.reduce((acc, prod) => {
-    const hasName = prod.nombre.trim().length >= 2 ? 1 : 0;
-    const hasPrice = prod.precio > 0 ? 1 : 0;
-    const hasStock = prod.stock_fin >= 0 ? 1 : 0;
-    return acc + hasName + hasPrice + hasStock;
-  }, 0);
+  let goodRows = 0;
+  let suspiciousRows = 0;
 
-  const confidenceBoost = typeof confidence === 'number' ? Math.max(0, confidence) / 10 : 0;
-  return productos.length * 10 + structured + confidenceBoost;
+  for (const prod of productos) {
+    const hasLetters = /[a-záéíóúüñ]/i.test(prod.nombre);
+    const reasonablePrice = prod.precio > 0 && prod.precio <= 100000;
+    const reasonableStock = prod.stock_fin >= 0 && prod.stock_fin <= 10000;
+
+    if (hasLetters && reasonablePrice && reasonableStock) {
+      goodRows++;
+    } else {
+      suspiciousRows++;
+    }
+  }
+
+  const confidenceBoost = typeof confidence === 'number' ? Math.max(0, confidence) / 5 : 0;
+  return goodRows * 25 - suspiciousRows * 15 + confidenceBoost;
 }
 
 async function runOCRTesseract(
@@ -250,11 +310,12 @@ async function runOCRTesseract(
       });
 
       const parsed = parseTableFromRawText(data.text);
-      const score = scoreParsedProducts(parsed.productos, data.confidence);
+      const deduped = dedupeProducts(parsed.productos);
+      const score = scoreParsedProducts(deduped, data.confidence);
 
       if (score > bestScore) {
         bestScore = score;
-        bestProductos = parsed.productos;
+        bestProductos = deduped;
       }
     }
   }
@@ -305,8 +366,17 @@ Reglas obligatorias:
         );
 
         if (!response.ok) {
-          const err = await response.json();
-          throw new Error(err.error?.message || 'Error en la API de Google Gemini');
+          const rawError = await response.text();
+          let apiMessage = '';
+
+          try {
+            const parsed = JSON.parse(rawError) as { error?: { message?: string; status?: string } };
+            apiMessage = parsed.error?.message || parsed.error?.status || '';
+          } catch {
+            apiMessage = rawError;
+          }
+
+          throw new Error(apiMessage || `Error en la API de Google Gemini (HTTP ${response.status})`);
         }
 
         const data = await response.json();
@@ -403,6 +473,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
   const [ocrMethod, setOcrMethod] = useState<OcrMethod>('tesseract');
   const [ocrStatus, setOcrStatus] = useState('');
   const [usedMethodInResult, setUsedMethodInResult] = useState<OcrMethod | null>(null);
+  const [useSharedKey, setUseSharedKey] = useState(false);
   const [showKey, setShowKey] = useState(false);
   const [result, setResult] = useState<ProductoLine[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -411,12 +482,19 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
   const normalizedSavedKey = (savedApiKey || '').trim();
   const canUseSavedKey = normalizedSavedKey.length > 0 && normalizedSavedKey !== normalizedCurrentKey;
   const geminiEnabled = ocrMethod === 'gemini';
+  const hasSharedGeminiKey = SHARED_GEMINI_KEY.length > 0;
+  const effectiveGeminiKey = useSharedKey ? SHARED_GEMINI_KEY : normalizedCurrentKey;
 
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const hasGeminiKey = Boolean(localStorage.getItem('gemini_key')?.trim());
-    setOcrMethod(hasGeminiKey ? 'gemini' : 'tesseract');
-  }, []);
+    const hasGeminiKey = normalizedSavedKey.length > 0;
+    const shouldUseGeminiByDefault = hasGeminiKey || hasSharedGeminiKey;
+    if (!shouldUseGeminiByDefault) return;
+
+    setOcrMethod('gemini');
+    if (!hasGeminiKey && hasSharedGeminiKey) {
+      setUseSharedKey(true);
+    }
+  }, [normalizedSavedKey, hasSharedGeminiKey]);
 
   const addFiles = (files: FileList | File[]) => {
     const newEntries: ImageEntry[] = [];
@@ -454,8 +532,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       return;
     }
 
-    if (geminiEnabled && !apiKey.trim()) {
-      toast.error('Introduce tu API Key de Gemini primero.');
+    if (geminiEnabled && !effectiveGeminiKey) {
+      toast.error('Introduce tu API Key o activa la clave compartida de Gemini.');
       return;
     }
 
@@ -476,8 +554,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       try {
         let products: ProductoLine[] = [];
         if (geminiEnabled) {
-          setOcrStatus('Analizando con Gemini AI...');
-          products = await scanImage(images[i].file, apiKey);
+          setOcrStatus(useSharedKey ? 'Analizando con Gemini AI (clave compartida)...' : 'Analizando con Gemini AI...');
+          products = await scanImage(images[i].file, effectiveGeminiKey);
         } else {
           setOcrStatus('Cargando motor de analisis...');
           products = await scanImageWithTesseract(images[i].file, pct => {
@@ -488,6 +566,12 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       } catch (err: unknown) {
         errors++;
         const msg = err instanceof Error ? err.message : 'Error desconocido';
+
+        if (geminiEnabled && useSharedKey && isGeminiDailyLimitError(msg)) {
+          setOcrStatus('La clave compartida de Gemini alcanzó el limite diario. Cambia a Tesseract, usa tu propia API key o espera al siguiente dia.');
+          toast.warning('Limite diario alcanzado en clave compartida. Usa Tesseract, tu API key o espera al proximo dia.');
+        }
+
         toast.error(`Error en imagen ${i + 1}: ${msg}`);
       }
     }
@@ -557,7 +641,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
                   Con Gemini AI (recomendado)
                 </p>
                 <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
-                  Alta precision con letra manuscrita. Requiere API Key gratuita.
+                  Alta precision con letra manuscrita. Requiere API Key gratuita. Análisis en la nube de Google, no en tu dispositivo. Si no tienes clave API, puedes seleccionar esta opción y se usará una clave compartida con límites de uso diarios. Si alcanzas el límite, puedes cambiar a Tesseract o esperar al siguiente día para que se restablezca el límite.
                 </p>
                 <p className="text-xs mt-1" style={{ color: 'hsl(var(--text-muted))' }}>
                   Obtenla gratis en{' '}
@@ -597,7 +681,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
                   Sin API Key (Tesseract)
                 </p>
                 <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
-                  Funciona offline, sin cuenta. Mejor con texto impreso.
+                  Funciona offline, sin cuenta. Mejor con texto impreso. Menor precision con letra manuscrita o tablas complejas. Requiere más pasos de correccion manual en el paso siguiente.
                 </p>
               </div>
             </div>
@@ -611,6 +695,27 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         <label className="label">
           <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>
         </label>
+        {hasSharedGeminiKey && (
+          <label className="flex items-center gap-2 text-xs mb-2" style={{ color: 'hsl(var(--text-secondary))' }}>
+            <input
+              type="checkbox"
+              checked={useSharedKey}
+              onChange={e => setUseSharedKey(e.target.checked)}
+            />
+            Usar clave compartida (limite diario)
+          </label>
+        )}
+        {useSharedKey ? (
+          <div
+            className="p-3 mb-2"
+            style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
+          >
+            <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+              Estás usando la clave compartida de Gemini con limite diario. Si se agota, cambia a Tesseract, usa tu propia API key o espera al siguiente dia.
+            </p>
+          </div>
+        ) : (
+          <>
         <p className="text-xs mb-1.5" style={{ color: 'hsl(var(--text-muted))' }}>
           Se guarda localmente. Obténla gratis en {' '}
           <a
@@ -659,6 +764,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
             {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
           </button>
         </div>
+          </>
+        )}
       </div>
       ) : (
         <div
@@ -828,7 +935,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         <button
           type="button"
           className="btn-primary w-full justify-center"
-          disabled={images.length === 0 || (geminiEnabled && !apiKey.trim()) || loading}
+          disabled={images.length === 0 || (geminiEnabled && !effectiveGeminiKey) || loading}
           onClick={handleScan}
         >
           {loading ? (
