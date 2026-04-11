@@ -1,5 +1,6 @@
 'use client';
-import React, { useState, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import Script from 'next/script';
 import { Upload, Scan, Key, AlertTriangle, CheckCircle, SkipForward, Eye, EyeOff, X, ImagePlus } from 'lucide-react';
 import type { ProductoLine } from '@/lib/storage';
 import { toast } from 'sonner';
@@ -15,6 +16,27 @@ interface Props {
 interface ImageEntry {
   file: File;
   preview: string;
+}
+
+type OcrMethod = 'gemini' | 'tesseract';
+
+type TesseractProgressEvent = {
+  status?: string;
+  progress?: number;
+};
+
+type TesseractGlobal = {
+  recognize: (
+    image: string,
+    lang?: string,
+    options?: { logger?: (message: TesseractProgressEvent) => void }
+  ) => Promise<{ data: { text: string } }>;
+};
+
+declare global {
+  interface Window {
+    Tesseract?: TesseractGlobal;
+  }
 }
 
 function toNumber(value: unknown): number | null {
@@ -37,6 +59,69 @@ function toNonNegativeNumber(value: unknown): number | null {
   const num = toNumber(value);
   if (num == null) return null;
   return Math.max(0, num);
+}
+
+function parseTableFromRawText(text: string): { productos: Array<{ nombre: string; precio: number; stock_fin: number }> } {
+  const lines = text.split('\n').filter(line => line.trim().length > 5);
+  const productos: Array<{ nombre: string; precio: number; stock_fin: number }> = [];
+
+  for (const line of lines) {
+    const numbers = line.match(/\d+([.,]\d+)?/g);
+    if (!numbers || numbers.length < 2) continue;
+
+    const lower = line.toLowerCase();
+    if (
+      lower.includes('producto') ||
+      lower.includes('precio') ||
+      lower.includes('stock') ||
+      lower.includes('total') ||
+      lower.includes('cuadre') ||
+      lower.includes('fecha')
+    ) {
+      continue;
+    }
+
+    const firstNumIndex = line.search(/\d/);
+    if (firstNumIndex < 2) continue;
+
+    const nombre = line
+      .substring(0, firstNumIndex)
+      .trim()
+      .replace(/[|:;\-_]+/g, '')
+      .trim();
+    if (!nombre || nombre.length < 2) continue;
+
+    const vals = numbers.map(num => Number.parseFloat(num.replace(',', '.')));
+
+    productos.push({
+      nombre,
+      precio: vals[0] || 0,
+      stock_fin: vals[1] || 0,
+    });
+  }
+
+  return { productos };
+}
+
+async function runOCRTesseract(
+  imageDataUrl: string,
+  onProgress?: (pct: number) => void
+): Promise<{ productos: Array<{ nombre: string; precio: number; stock_fin: number }> }> {
+  if (typeof window === 'undefined' || !window.Tesseract) {
+    throw new Error('No se pudo cargar Tesseract. Verifica tu conexion y recarga la pagina.');
+  }
+
+  const {
+    data: { text }
+  } = await window.Tesseract.recognize(imageDataUrl, 'spa', {
+    logger: message => {
+      if (message.status === 'recognizing text' && typeof message.progress === 'number') {
+        onProgress?.(Math.round(message.progress * 100));
+      }
+    },
+  });
+
+  return parseTableFromRawText(text);
 }
 
 async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
@@ -137,10 +222,41 @@ Reglas obligatorias:
   });
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+  });
+}
+
+async function scanImageWithTesseract(
+  file: File,
+  onProgress?: (pct: number) => void
+): Promise<ProductoLine[]> {
+  const imageDataUrl = await fileToDataUrl(file);
+  const result = await runOCRTesseract(imageDataUrl, onProgress);
+
+  return result.productos
+    .map(p => ({
+      nombre: p.nombre || '',
+      precio: toNonNegativeNumber(p.precio) ?? 0,
+      stock_inicio: toNonNegativeInt(p.stock_fin) ?? 0,
+      stock_fin: 0,
+      vendidos: 0,
+      subtotal: 0,
+    }))
+    .filter(p => p.nombre.length > 0);
+}
+
 export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProductsExtracted, onSkip }: Props) {
   const [images, setImages] = useState<ImageEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [scanProgress, setScanProgress] = useState<{ current: number; total: number } | null>(null);
+  const [ocrMethod, setOcrMethod] = useState<OcrMethod>('tesseract');
+  const [ocrStatus, setOcrStatus] = useState('');
+  const [usedMethodInResult, setUsedMethodInResult] = useState<OcrMethod | null>(null);
   const [showKey, setShowKey] = useState(false);
   const [result, setResult] = useState<ProductoLine[] | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -148,6 +264,13 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
   const normalizedCurrentKey = apiKey.trim();
   const normalizedSavedKey = (savedApiKey || '').trim();
   const canUseSavedKey = normalizedSavedKey.length > 0 && normalizedSavedKey !== normalizedCurrentKey;
+  const geminiEnabled = ocrMethod === 'gemini';
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const hasGeminiKey = Boolean(localStorage.getItem('gemini_key')?.trim());
+    setOcrMethod(hasGeminiKey ? 'gemini' : 'tesseract');
+  }, []);
 
   const addFiles = (files: FileList | File[]) => {
     const newEntries: ImageEntry[] = [];
@@ -159,6 +282,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
     if (newEntries.length > 0) {
       setImages(prev => [...prev, ...newEntries]);
       setResult(null);
+      setUsedMethodInResult(null);
+      setOcrStatus('');
     }
   };
 
@@ -173,26 +298,46 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       return prev.filter((_, i) => i !== index);
     });
     setResult(null);
+    setUsedMethodInResult(null);
+    setOcrStatus('');
   };
 
   const handleScan = async () => {
-    if (images.length === 0 || !apiKey.trim()) {
-      toast.error('Se requiere al menos una imagen y la clave API de Google Gemini.');
+    if (images.length === 0) {
+      toast.error('Se requiere al menos una imagen.');
       return;
     }
-    if (!navigator.onLine) {
+
+    if (geminiEnabled && !apiKey.trim()) {
+      toast.error('Introduce tu API Key de Gemini primero.');
+      return;
+    }
+
+    if (geminiEnabled && !navigator.onLine) {
       toast.error('Sin conexion: el OCR requiere internet. Puedes saltar este paso y continuar manualmente.');
       return;
     }
+
     setLoading(true);
     setResult(null);
+    setUsedMethodInResult(null);
+    setOcrStatus('');
     const allProducts: ProductoLine[] = [];
     let errors = 0;
 
     for (let i = 0; i < images.length; i++) {
       setScanProgress({ current: i + 1, total: images.length });
       try {
-        const products = await scanImage(images[i].file, apiKey);
+        let products: ProductoLine[] = [];
+        if (geminiEnabled) {
+          setOcrStatus('Analizando con Gemini AI...');
+          products = await scanImage(images[i].file, apiKey);
+        } else {
+          setOcrStatus('Cargando motor de analisis...');
+          products = await scanImageWithTesseract(images[i].file, pct => {
+            setOcrStatus(`Analizando... ${pct}%`);
+          });
+        }
         allProducts.push(...products);
       } catch (err: unknown) {
         errors++;
@@ -206,13 +351,17 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
     if (allProducts.length > 0) {
       setResult(allProducts);
+      setUsedMethodInResult(ocrMethod);
       const successMsg = errors > 0
         ? `${allProducts.length} productos extraídos (${errors} imagen(es) con error).`
         : `Se extrajeron ${allProducts.length} productos de ${images.length} imagen(es).`;
+      setOcrStatus(`${allProducts.length} productos detectados. Revisa y corrige si es necesario.`);
       toast.success(successMsg);
     } else if (errors === images.length) {
+      setOcrStatus('Error durante el analisis. Revisa las imagenes e intenta de nuevo.');
       toast.error('No se pudo procesar ninguna imagen.');
     } else {
+      setOcrStatus('No se detectaron productos. Puedes añadirlos manualmente en el paso siguiente.');
       toast.warning('No se encontraron productos en las imágenes.');
     }
   };
@@ -225,6 +374,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
   return (
     <div className="animate-fade-in space-y-5">
+      <Script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js" strategy="lazyOnload" />
+
       <div>
         <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
           Cuadre anterior (OCR)
@@ -234,8 +385,83 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         </p>
       </div>
 
-      {/* Clave API */}
       <div>
+        <label className="label">
+          <span className="flex items-center gap-1.5"><Scan size={12} />Como quieres analizar el cuadre?</span>
+        </label>
+        <div className="space-y-2">
+          <label
+            className="block p-3 cursor-pointer transition-colors"
+            style={{
+              border: ocrMethod === 'gemini' ? '2px solid var(--ink)' : '2px solid hsl(var(--text-muted))',
+              background: ocrMethod === 'gemini' ? 'var(--bg-alt)' : 'var(--bg)',
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="ocr-method"
+                value="gemini"
+                checked={ocrMethod === 'gemini'}
+                onChange={() => setOcrMethod('gemini')}
+                className="mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-secondary))' }}>
+                  Con Gemini AI (recomendado)
+                </p>
+                <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+                  Alta precision con letra manuscrita. Requiere API Key gratuita.
+                </p>
+                <p className="text-xs mt-1" style={{ color: 'hsl(var(--text-muted))' }}>
+                  Obtenla gratis en{' '}
+                  <a
+                    href="https://aistudio.google.com/app/apikey"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 transition-colors"
+                    style={{ color: 'var(--ink)' }}
+                  >
+                    aistudio.google.com
+                  </a>
+                  .
+                </p>
+              </div>
+            </div>
+          </label>
+
+          <label
+            className="block p-3 cursor-pointer transition-colors"
+            style={{
+              border: ocrMethod === 'tesseract' ? '2px solid var(--ink)' : '2px solid hsl(var(--text-muted))',
+              background: ocrMethod === 'tesseract' ? 'var(--bg-alt)' : 'var(--bg)',
+            }}
+          >
+            <div className="flex items-start gap-2">
+              <input
+                type="radio"
+                name="ocr-method"
+                value="tesseract"
+                checked={ocrMethod === 'tesseract'}
+                onChange={() => setOcrMethod('tesseract')}
+                className="mt-0.5"
+              />
+              <div>
+                <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-secondary))' }}>
+                  Sin API Key (Tesseract)
+                </p>
+                <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+                  Funciona offline, sin cuenta. Mejor con texto impreso.
+                </p>
+              </div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      {/* Clave API */}
+      {geminiEnabled ? (
+        <div>
         <label className="label">
           <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>
         </label>
@@ -288,6 +514,16 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
           </button>
         </div>
       </div>
+      ) : (
+        <div
+          className="p-3"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
+        >
+          <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+            El analisis se hace en tu dispositivo. Funciona mejor con tablas impresas. Para letra manuscrita, los resultados pueden requerir correccion manual.
+          </p>
+        </div>
+      )}
 
       {/* Image upload area */}
       <div>
@@ -380,6 +616,16 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         </div>
       )}
 
+      {!!ocrStatus && (
+        <div
+          id="ocr-status"
+          className="px-4 py-3 text-sm"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)', color: 'var(--ink)' }}
+        >
+          {ocrStatus}
+        </div>
+      )}
+
       {/* Result preview */}
       {result && (
         <div
@@ -411,6 +657,12 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
               </div>
             ))}
           </div>
+
+          {usedMethodInResult === 'tesseract' && result.length > 0 && (
+            <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
+              Revisa los productos detectados antes de continuar: Tesseract puede cometer errores con letra manuscrita o tablas complejas. Puedes editar cualquier valor directamente en el paso 3.
+            </p>
+          )}
         </div>
       )}
 
@@ -430,7 +682,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
         <button
           type="button"
           className="btn-primary w-full justify-center"
-          disabled={images.length === 0 || !apiKey.trim() || loading}
+          disabled={images.length === 0 || (geminiEnabled && !apiKey.trim()) || loading}
           onClick={handleScan}
         >
           {loading ? (
@@ -442,7 +694,10 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
               Analizando imágenes…
             </>
           ) : (
-            <><Scan size={16} />Escanear {images.length > 1 ? `${images.length} imágenes` : 'imagen'} con IA</>
+            <>
+              <Scan size={16} />
+              Escanear {images.length > 1 ? `${images.length} imágenes` : 'imagen'} {geminiEnabled ? 'con Gemini AI' : 'con Tesseract'}
+            </>
           )}
         </button>
 
