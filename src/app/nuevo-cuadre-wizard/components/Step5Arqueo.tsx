@@ -6,13 +6,16 @@ import { DENOMINATIONS, formatCUP } from '@/lib/storage';
 interface Props {
   denomCounts: Record<number, number>;
   onChange: (d: Record<number, number>) => void;
+  ventasInventario: number;
+  esperadoEfectivo: number;
 }
 
-export default function Step5Arqueo({ denomCounts, onChange }: Props) {
+export default function Step5Arqueo({ denomCounts, onChange, ventasInventario, esperadoEfectivo }: Props) {
   const total = DENOMINATIONS.reduce(
     (sum, d) => sum + d * (denomCounts[d] || 0),
     0
   );
+  const diferencia = total - esperadoEfectivo;
 
   const update = (denom: number, qty: number) => {
     onChange({ ...denomCounts, [denom]: Math.max(0, qty) });
@@ -147,6 +150,35 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
             {formatCUP(total)}
           </p>
         </div>
+      </div>
+
+      <div
+        className="p-4 space-y-2"
+        style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'var(--ink-muted)' }}>
+          Referencia para comparar
+        </p>
+        <div className="flex justify-between text-sm">
+          <span style={{ color: 'var(--ink-muted)' }}>Venta por inventario</span>
+          <span className="font-mono-nums" style={{ color: 'var(--ink)' }}>{formatCUP(ventasInventario)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span style={{ color: 'var(--ink-muted)' }}>Efectivo esperado en caja</span>
+          <span className="font-mono-nums" style={{ color: 'var(--ink)' }}>{formatCUP(esperadoEfectivo)}</span>
+        </div>
+        <div className="flex justify-between text-sm pt-1" style={{ borderTop: '1px solid var(--ink)' }}>
+          <span style={{ color: 'var(--ink-muted)' }}>Diferencia vs arqueo</span>
+          <span
+            className="font-mono-nums font-semibold"
+            style={{ color: diferencia === 0 ? 'var(--green)' : diferencia > 0 ? 'var(--amber)' : 'var(--red)' }}
+          >
+            {diferencia >= 0 ? '+' : ''}{formatCUP(diferencia)}
+          </span>
+        </div>
+        <p className="text-xs" style={{ color: 'var(--ink-muted)' }}>
+          Si hay diferencia, ajusta arriba las cantidades de billetes/monedas.
+        </p>
       </div>
     </div>
   );

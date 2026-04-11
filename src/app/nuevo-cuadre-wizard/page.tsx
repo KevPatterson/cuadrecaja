@@ -57,6 +57,9 @@ export default function NuevoCuadrePage() {
 
   // Computed
   const arqueo_total = DENOMINATIONS.reduce((s, d) => s + d * (denomCounts[d] || 0), 0);
+  const ventas_inventario = productos.reduce((s, p) => s + p.subtotal, 0);
+  const gastos_total = gastos.reduce((s, g) => s + g.monto, 0);
+  const esperado_efectivo = turnoData.fondo_apertura + ventas_inventario - gastos_total - devoluciones;
 
   // Load config, catalog, draft
   useEffect(() => {
@@ -147,10 +150,7 @@ export default function NuevoCuadrePage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const ventas_inventario = productos.reduce((s, p) => s + p.subtotal, 0);
-      const gastos_total = gastos.reduce((s, g) => s + g.monto, 0);
       const ventas_total_dia = ventas_inventario + transferencias;
-      const esperado_efectivo = turnoData.fondo_apertura + ventas_inventario - gastos_total - devoluciones;
       const diferencia = arqueo_total - esperado_efectivo;
 
       const cuadre: Cuadre = {
@@ -254,6 +254,8 @@ export default function NuevoCuadrePage() {
             <Step5Arqueo
               denomCounts={denomCounts}
               onChange={setDenomCounts}
+              ventasInventario={ventas_inventario}
+              esperadoEfectivo={esperado_efectivo}
             />
           )}
           {step === 6 && (
