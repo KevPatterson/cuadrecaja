@@ -1,5 +1,5 @@
 'use client';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Plus, Trash2, Package } from 'lucide-react';
 import type { ProductoLine, CatalogProduct } from '@/lib/storage';
 import { formatCUP } from '@/lib/storage';
@@ -8,19 +8,26 @@ interface Props {
   productos: ProductoLine[];
   onChange: (p: ProductoLine[]) => void;
   catalog: CatalogProduct[];
+  showTesseractWarning?: boolean;
 }
 
-export default function Step3Inventario({ productos, onChange, catalog }: Props) {
+export default function Step3Inventario({ productos, onChange, catalog, showTesseractWarning = false }: Props) {
   const [newNombre, setNewNombre] = useState('');
   const [newPrecio, setNewPrecio] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [catalogFilter, setCatalogFilter] = useState('');
+  const [showWarning, setShowWarning] = useState(showTesseractWarning);
+
+  useEffect(() => {
+    setShowWarning(showTesseractWarning);
+  }, [showTesseractWarning]);
 
   const ventasInventario = productos.reduce((sum, p) => sum + p.subtotal, 0);
 
   const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
   const updateProduct = (idx: number, field: keyof ProductoLine, value: number | string) => {
+    setShowWarning(false);
     const updated = productos.map((p, i) => {
       if (i !== idx) return p;
       const next = { ...p, [field]: value };
@@ -124,6 +131,22 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
       {/* Products table */}
       {productos.length > 0 ? (
         <div className="space-y-3">
+          <div
+            id="tesseract-warning"
+            style={{
+              display: showWarning ? 'block' : 'none',
+              border: '2px solid var(--amber)',
+              padding: '10px 14px',
+              marginBottom: '12px',
+              fontSize: '13px',
+              fontFamily: 'DM Mono',
+              color: 'var(--amber)',
+              background: 'var(--bg-alt)',
+            }}
+          >
+            ⚠ Resultados de Tesseract - revisa cada fila antes de continuar. Los valores detectados pueden tener errores, especialmente en letra manuscrita.
+          </div>
+
           {productos.map((prod, idx) => (
             <div
               key={`prod-line-${idx}`}

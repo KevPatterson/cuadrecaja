@@ -9,7 +9,7 @@ interface Props {
   apiKey: string;
   savedApiKey?: string;
   onApiKeyChange: (k: string) => void;
-  onProductsExtracted: (products: ProductoLine[]) => void;
+  onProductsExtracted: (products: ProductoLine[], fromTesseract?: boolean) => void;
   onSkip: () => void;
 }
 
@@ -29,7 +29,13 @@ type TesseractGlobal = {
   recognize: (
     image: string,
     lang?: string,
-    options?: { logger?: (message: TesseractProgressEvent) => void }
+    options?: {
+      logger?: (message: TesseractProgressEvent) => void;
+      tessedit_pageseg_mode?: string;
+      tessedit_ocr_engine_mode?: string;
+      preserve_interword_spaces?: string;
+      tessedit_char_whitelist?: string;
+    }
   ) => Promise<{ data: { text: string } }>;
 };
 
@@ -61,46 +67,90 @@ function toNonNegativeNumber(value: unknown): number | null {
   return Math.max(0, num);
 }
 
-function parseTableFromRawText(text: string): { productos: Array<{ nombre: string; precio: number; stock_fin: number }> } {
-  const lines = text.split('\n').filter(line => line.trim().length > 5);
+function parseTableFromRawText(rawText: string): { productos: Array<{ nombre: string; precio: number; stock_fin: number }> } {
+  const lines = rawText.split('\n').map(line => line.trim()).filter(line => line.length > 2);
   const productos: Array<{ nombre: string; precio: number; stock_fin: number }> = [];
 
-  for (const line of lines) {
-    const numbers = line.match(/\d+([.,]\d+)?/g);
-    if (!numbers || numbers.length < 2) continue;
+  const skipKeywords = [
+    'producto', 'precio', 'stock', 'inicio', 'fin', 'vendido',
+    'total', 'cuadre', 'fecha', 'cajero', 'fondo', 'turno',
+    'cup', 'transferencia', 'apertura', 'cierre', 'dia', 'día'
+  ];
 
+  for (const line of lines) {
     const lower = line.toLowerCase();
-    if (
-      lower.includes('producto') ||
-      lower.includes('precio') ||
-      lower.includes('stock') ||
-      lower.includes('total') ||
-      lower.includes('cuadre') ||
-      lower.includes('fecha')
-    ) {
-      continue;
-    }
+    if (skipKeywords.some(keyword => lower.includes(keyword))) continue;
+
+    const numbers = [...line.matchAll(/\b\d+([.,]\d+)?\b/g)].map(match =>
+      Number.parseFloat(match[0].replace(',', '.'))
+    );
+    if (numbers.length < 2) continue;
 
     const firstNumIndex = line.search(/\d/);
     if (firstNumIndex < 2) continue;
 
-    const nombre = line
+    let nombre = line
       .substring(0, firstNumIndex)
-      .trim()
-      .replace(/[|:;\-_]+/g, '')
+      .replace(/[|:;\-_\/\\]+/g, ' ')
+      .replace(/\s+/g, ' ')
       .trim();
-    if (!nombre || nombre.length < 2) continue;
+    if (nombre.length < 2 || /^[\W\d]+$/.test(nombre)) continue;
 
-    const vals = numbers.map(num => Number.parseFloat(num.replace(',', '.')));
+    const precio = numbers[0] || 0;
+    let stock_fin = 0;
+    if (numbers.length >= 4) {
+      stock_fin = numbers[2] || 0;
+    } else if (numbers.length >= 2) {
+      stock_fin = numbers[1] || 0;
+    }
+
+    if (precio > 100000 || stock_fin > 10000) continue;
+    if (precio === 0 && stock_fin === 0) continue;
 
     productos.push({
       nombre,
-      precio: vals[0] || 0,
-      stock_fin: vals[1] || 0,
+      precio,
+      stock_fin,
     });
   }
 
   return { productos };
+}
+
+function preprocessImage(imageDataUrl: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      const scale = 2;
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('No se pudo preparar la imagen para OCR.'));
+        return;
+      }
+
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const gray = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        const bw = gray < 140 ? 0 : 255;
+        data[i] = bw;
+        data[i + 1] = bw;
+        data[i + 2] = bw;
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('No se pudo cargar la imagen para OCR.'));
+    img.src = imageDataUrl;
+  });
 }
 
 async function runOCRTesseract(
@@ -111,14 +161,23 @@ async function runOCRTesseract(
     throw new Error('No se pudo cargar Tesseract. Verifica tu conexion y recarga la pagina.');
   }
 
+  const processedImage = await preprocessImage(imageDataUrl);
+
   const {
     data: { text }
-  } = await window.Tesseract.recognize(imageDataUrl, 'spa', {
+  } = await window.Tesseract.recognize(processedImage, 'spa', {
     logger: message => {
       if (message.status === 'recognizing text' && typeof message.progress === 'number') {
-        onProgress?.(Math.round(message.progress * 100));
+        const pct = Math.round(message.progress * 100);
+        const statusEl = document.getElementById('ocr-status');
+        if (statusEl) statusEl.textContent = `Analizando... ${pct}%`;
+        onProgress?.(pct);
       }
     },
+    tessedit_pageseg_mode: '6',
+    tessedit_ocr_engine_mode: '1',
+    preserve_interword_spaces: '1',
+    tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzáéíóúüñÁÉÍÓÚÜÑ0123456789.,: -/'
   });
 
   return parseTableFromRawText(text);
@@ -375,7 +434,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
   const handleUseResults = () => {
     if (result) {
-      onProductsExtracted(result);
+      onProductsExtracted(result, usedMethodInResult === 'tesseract' && result.length > 0);
     }
   };
 

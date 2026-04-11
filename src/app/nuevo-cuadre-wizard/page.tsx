@@ -44,6 +44,7 @@ export default function NuevoCuadrePage() {
 
   // Step 3
   const [productos, setProductos] = useState<ProductoLine[]>([]);
+  const [showTesseractWarning, setShowTesseractWarning] = useState(false);
 
   // Step 4
   const [transferencias, setTransferencias] = useState(0);
@@ -165,8 +166,9 @@ export default function NuevoCuadrePage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleOCRProducts = (prods: ProductoLine[]) => {
+  const handleOCRProducts = (prods: ProductoLine[], fromTesseract = false) => {
     setProductos(prods);
+    setShowTesseractWarning(fromTesseract && prods.length > 0);
     setStep(3);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -254,7 +256,11 @@ export default function NuevoCuadrePage() {
               savedApiKey={config.gemini_key}
               onApiKeyChange={setApiKey}
               onProductsExtracted={handleOCRProducts}
-              onSkip={() => { setStep(3); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+              onSkip={() => {
+                setShowTesseractWarning(false);
+                setStep(3);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
             />
           )}
           {step === 3 && (
@@ -262,6 +268,7 @@ export default function NuevoCuadrePage() {
               productos={productos}
               onChange={setProductos}
               catalog={catalog}
+              showTesseractWarning={showTesseractWarning}
             />
           )}
           {step === 4 && (
