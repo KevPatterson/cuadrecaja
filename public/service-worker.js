@@ -1,4 +1,4 @@
-const CACHE = "cuadre-v2";
+const CACHE = "cuadre-v3";
 const OFFLINE_URL = "/offline.html";
 const ASSETS = [
   "/",
@@ -17,7 +17,12 @@ function isSameOrigin(url) {
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting();
+});
+
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", e => {

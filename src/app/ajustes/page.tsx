@@ -7,6 +7,7 @@ import {
   getConfig, getCatalog, saveConfig,
   type MipymeConfig, type CatalogProduct, type BackupPreview,
   getBackupSnapshot, exportBackupAsJSON, restoreFromBackup, importBackupFromJSON, getBackupPreviewFromJSON,
+  clearAllData,
   startAutoBackup,
 } from '@/lib/storage';
 import { Settings, Trash2, AlertTriangle, Eye, EyeOff, Key, ShieldCheck, Download, RotateCcw, Upload } from 'lucide-react';
@@ -153,11 +154,7 @@ export default function AjustesPage() {
   };
 
   const handleClearAll = () => {
-    if (typeof window === 'undefined') return;
-    localStorage.removeItem('mipyme_config');
-    localStorage.removeItem('mipyme_catalog');
-    localStorage.removeItem('mipyme_historial');
-    localStorage.removeItem('mipyme_draft');
+    clearAllData();
     setConfig({ nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 });
     setCatalog([]);
     setApiKey('');

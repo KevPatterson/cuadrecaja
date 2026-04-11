@@ -51,7 +51,94 @@ const KEYS = {
   catalog: 'mipyme_catalog',
   historial: 'mipyme_historial',
   draft: 'mipyme_draft',
+  backup: 'mipyme_backup',
 } as const;
+
+const SHADOW_SUFFIX = '_shadow';
+
+function shadowKey(key: string): string {
+  return `${key}${SHADOW_SUFFIX}`;
+}
+
+function setItemSafe(key: string, value: string): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    localStorage.setItem(key, value);
+  } catch {
+    return false;
+  }
+
+  // Secondary copy for recovery from corrupt/incomplete writes.
+  try {
+    localStorage.setItem(shadowKey(key), value);
+  } catch {
+    // Best effort only.
+  }
+  return true;
+}
+
+function removeItemSafe(key: string): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(key);
+  } catch {
+    // Best effort only.
+  }
+  try {
+    localStorage.removeItem(shadowKey(key));
+  } catch {
+    // Best effort only.
+  }
+}
+
+function getItemSafe(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const value = localStorage.getItem(key);
+    if (value !== null) return value;
+  } catch {
+    // Fallback to shadow key.
+  }
+
+  try {
+    return localStorage.getItem(shadowKey(key));
+  } catch {
+    return null;
+  }
+}
+
+function recoverFromShadow(key: string): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const shadow = localStorage.getItem(shadowKey(key));
+    if (shadow === null) return null;
+    try {
+      localStorage.setItem(key, shadow);
+    } catch {
+      // Best effort only.
+    }
+    return shadow;
+  } catch {
+    return null;
+  }
+}
+
+function readJSONSafe<T>(key: string): T | null {
+  const raw = getItemSafe(key);
+  if (!raw) return null;
+
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    const recovered = recoverFromShadow(key);
+    if (!recovered) return null;
+    try {
+      return JSON.parse(recovered) as T;
+    } catch {
+      return null;
+    }
+  }
+}
 
 function normalizeConfig(raw: unknown): MipymeConfig {
   const base: MipymeConfig = { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
@@ -77,45 +164,36 @@ function normalizeConfig(raw: unknown): MipymeConfig {
 
 export function getConfig(): MipymeConfig {
   if (typeof window === 'undefined') return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
-  try {
-    const raw = localStorage.getItem(KEYS.config);
-    if (!raw) return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
-    return normalizeConfig(JSON.parse(raw));
-  } catch {
-    return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
-  }
+  const raw = readJSONSafe<unknown>(KEYS.config);
+  if (!raw) return { nombre: 'Mi Negocio', cajeros: [], fondo_base: 0 };
+  return normalizeConfig(raw);
 }
 
 export function saveConfig(config: MipymeConfig): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEYS.config, JSON.stringify(normalizeConfig(config)));
+  const normalized = normalizeConfig(config);
+  if (!setItemSafe(KEYS.config, JSON.stringify(normalized))) return;
+  createBackupSnapshot();
 }
 
 export function getCatalog(): CatalogProduct[] {
   if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.catalog);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  const parsed = readJSONSafe<unknown>(KEYS.catalog);
+  if (!Array.isArray(parsed)) return [];
+  return parsed as CatalogProduct[];
 }
 
 export function saveCatalog(catalog: CatalogProduct[]): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEYS.catalog, JSON.stringify(catalog));
+  if (!setItemSafe(KEYS.catalog, JSON.stringify(catalog))) return;
+  createBackupSnapshot();
 }
 
 export function getHistorial(): Cuadre[] {
   if (typeof window === 'undefined') return [];
-  try {
-    const raw = localStorage.getItem(KEYS.historial);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch {
-    return [];
-  }
+  const parsed = readJSONSafe<unknown>(KEYS.historial);
+  if (!Array.isArray(parsed)) return [];
+  return parsed as Cuadre[];
 }
 
 export function saveCuadre(cuadre: Cuadre): void {
@@ -127,34 +205,43 @@ export function saveCuadre(cuadre: Cuadre): void {
   } else {
     historial.unshift(cuadre);
   }
-  localStorage.setItem(KEYS.historial, JSON.stringify(historial));
+  if (!setItemSafe(KEYS.historial, JSON.stringify(historial))) return;
+  createBackupSnapshot();
 }
 
 export function deleteCuadre(id: string): void {
   if (typeof window === 'undefined') return;
   const historial = getHistorial().filter(c => c.id !== id);
-  localStorage.setItem(KEYS.historial, JSON.stringify(historial));
+  if (!setItemSafe(KEYS.historial, JSON.stringify(historial))) return;
+  createBackupSnapshot();
 }
 
 export function saveDraft(draft: Partial<Cuadre> & { step?: number }): void {
   if (typeof window === 'undefined') return;
-  localStorage.setItem(KEYS.draft, JSON.stringify(draft));
+  if (!setItemSafe(KEYS.draft, JSON.stringify(draft))) return;
+  createBackupSnapshot();
 }
 
 export function getDraft(): (Partial<Cuadre> & { step?: number }) | null {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(KEYS.draft);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  const parsed = readJSONSafe<unknown>(KEYS.draft);
+  if (!parsed || typeof parsed !== 'object') return null;
+  return parsed as Partial<Cuadre> & { step?: number };
 }
 
 export function clearDraft(): void {
   if (typeof window === 'undefined') return;
-  localStorage.removeItem(KEYS.draft);
+  removeItemSafe(KEYS.draft);
+  createBackupSnapshot();
+}
+
+export function clearAllData(): void {
+  if (typeof window === 'undefined') return;
+  removeItemSafe(KEYS.config);
+  removeItemSafe(KEYS.catalog);
+  removeItemSafe(KEYS.historial);
+  removeItemSafe(KEYS.draft);
+  removeItemSafe(KEYS.backup);
 }
 
 export const DENOMINATIONS = [1000, 500, 200, 100, 50, 20, 10, 5, 3, 1] as const;
@@ -302,7 +389,11 @@ export function importHistorialFromCSV(csvText: string): ImportResult {
 
   if (toImport.length > 0) {
     const merged = [...toImport, ...existing].sort((a, b) => b.ts - a.ts);
-    localStorage.setItem('mipyme_historial', JSON.stringify(merged));
+    if (!setItemSafe(KEYS.historial, JSON.stringify(merged))) {
+      result.errors.push('No se pudo guardar el historial importado en este dispositivo.');
+      return result;
+    }
+    createBackupSnapshot();
   }
 
   return result;
@@ -335,7 +426,6 @@ function parseCSVLine(line: string): string[] {
 
 // ─── Automatic localStorage Backup ────────────────────────────────────────────
 
-const BACKUP_KEY = 'mipyme_backup';
 const BACKUP_INTERVAL_MS = 5 * 60 * 1000; // every 5 minutes
 
 export interface BackupSnapshot {
@@ -343,6 +433,7 @@ export interface BackupSnapshot {
   historial: Cuadre[];
   config: MipymeConfig;
   catalog: CatalogProduct[];
+  draft: (Partial<Cuadre> & { step?: number }) | null;
 }
 
 export interface BackupImportResult {
@@ -368,8 +459,11 @@ function normalizeBackupSnapshot(raw: unknown): BackupSnapshot | null {
   const historial = Array.isArray(raw.historial) ? raw.historial as Cuadre[] : [];
   const catalog = Array.isArray(raw.catalog) ? raw.catalog as CatalogProduct[] : [];
   const config = normalizeConfig(raw.config);
+  const draft = raw.draft && typeof raw.draft === 'object'
+    ? raw.draft as (Partial<Cuadre> & { step?: number })
+    : null;
 
-  return { ts, historial, config, catalog };
+  return { ts, historial, config, catalog, draft };
 }
 
 export function createBackupSnapshot(): void {
@@ -380,8 +474,9 @@ export function createBackupSnapshot(): void {
       historial: getHistorial(),
       config: getConfig(),
       catalog: getCatalog(),
+      draft: getDraft(),
     };
-    localStorage.setItem(BACKUP_KEY, JSON.stringify(snapshot));
+    setItemSafe(KEYS.backup, JSON.stringify(snapshot));
   } catch {
     // Silently fail — backup is best-effort
   }
@@ -389,13 +484,7 @@ export function createBackupSnapshot(): void {
 
 export function getBackupSnapshot(): BackupSnapshot | null {
   if (typeof window === 'undefined') return null;
-  try {
-    const raw = localStorage.getItem(BACKUP_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
+  return readJSONSafe<BackupSnapshot>(KEYS.backup);
 }
 
 export function restoreFromBackup(): boolean {
@@ -403,10 +492,17 @@ export function restoreFromBackup(): boolean {
   try {
     const snapshot = getBackupSnapshot();
     if (!snapshot) return false;
-    localStorage.setItem('mipyme_historial', JSON.stringify(snapshot.historial));
-    localStorage.setItem('mipyme_config', JSON.stringify(snapshot.config));
-    localStorage.setItem('mipyme_catalog', JSON.stringify(snapshot.catalog));
-    return true;
+    const okHistorial = setItemSafe(KEYS.historial, JSON.stringify(snapshot.historial));
+    const okConfig = setItemSafe(KEYS.config, JSON.stringify(snapshot.config));
+    const okCatalog = setItemSafe(KEYS.catalog, JSON.stringify(snapshot.catalog));
+
+    if (snapshot.draft) {
+      setItemSafe(KEYS.draft, JSON.stringify(snapshot.draft));
+    } else {
+      removeItemSafe(KEYS.draft);
+    }
+
+    return okHistorial && okConfig && okCatalog;
   } catch {
     return false;
   }
@@ -449,10 +545,18 @@ export function importBackupFromJSON(jsonText: string): BackupImportResult {
       return { ok: false, error: 'Formato de respaldo inválido.' };
     }
 
-    localStorage.setItem(KEYS.historial, JSON.stringify(snapshot.historial));
-    localStorage.setItem(KEYS.config, JSON.stringify(snapshot.config));
-    localStorage.setItem(KEYS.catalog, JSON.stringify(snapshot.catalog));
-    localStorage.setItem(BACKUP_KEY, JSON.stringify(snapshot));
+    const okHistorial = setItemSafe(KEYS.historial, JSON.stringify(snapshot.historial));
+    const okConfig = setItemSafe(KEYS.config, JSON.stringify(snapshot.config));
+    const okCatalog = setItemSafe(KEYS.catalog, JSON.stringify(snapshot.catalog));
+    if (snapshot.draft) {
+      setItemSafe(KEYS.draft, JSON.stringify(snapshot.draft));
+    } else {
+      removeItemSafe(KEYS.draft);
+    }
+    setItemSafe(KEYS.backup, JSON.stringify(snapshot));
+    if (!(okHistorial && okConfig && okCatalog)) {
+      return { ok: false, error: 'No hubo espacio suficiente para guardar todos los datos.' };
+    }
     return { ok: true };
   } catch {
     return { ok: false, error: 'No se pudo leer el archivo JSON.' };

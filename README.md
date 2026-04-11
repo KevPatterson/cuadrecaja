@@ -1,159 +1,159 @@
-# CuadreCaja — Cuadre de Caja para MIPYMEs Cubanas
+# CuadreCaja
 
-Aplicación web PWA para gestionar el cuadre de caja diario en pequeñas y medianas empresas cubanas. Funciona completamente **offline** con almacenamiento local, sin necesidad de servidor ni conexión permanente a internet.
+Aplicacion web PWA para el cuadre de caja diario en MIPYMEs cubanas.
 
----
+Esta app prioriza modo offline y persistencia local: puedes trabajar sin internet, reconectar, y volver a desconectarte sin perder configuracion, borradores ni historial.
 
-## ✨ Funcionalidades
+## Caracteristicas Principales
 
-### 🧾 Wizard de Nuevo Cuadre (6 pasos)
-- **Paso 1 — Turno**: Selección de turno (mañana / tarde / noche), nombre del cajero y fecha.
-- **Paso 2 — OCR con IA**: Fotografía del cuadre anterior analizada con Google Gemini Vision API para pre-llenar el inventario automáticamente.
-- **Paso 3 — Inventario**: Registro de stock inicial, ventas y stock final por producto.
-- **Paso 4 — Ingresos y Gastos**: Registro de ingresos adicionales y gastos del turno.
-- **Paso 5 — Arqueo**: Conteo de billetes y monedas por denominación.
-- **Paso 6 — Resumen**: Resultado del cuadre (cuadra / faltante / sobrante) con exportación a PDF.
+- Wizard de nuevo cuadre en 6 pasos.
+- OCR opcional con Google Gemini para extraer productos desde imagenes.
+- Historial completo con filtros, detalle, exportacion a PDF y CSV, e importacion CSV.
+- Ajustes de negocio, cajeros, catalogo y clave de OCR.
+- Respaldos JSON con descarga, importacion y restauracion.
+- Soporte PWA con service worker y pagina fallback offline.
+- Aviso de nueva version disponible con actualizacion controlada por usuario.
 
-### 📋 Historial de Cuadres
-- Listado de todos los cuadres guardados con filtro por estado (cuadra / faltante / sobrante).
-- Búsqueda por cajero, fecha o turno.
-- Modal de detalle con desglose completo y exportación individual a PDF.
-- Exportar historial completo a **CSV** (con BOM UTF-8 para Excel).
-- Importar / recuperar cuadres desde un archivo CSV.
+## Stack Tecnologico
 
-### ⚙️ Ajustes
-- Configuración del negocio (nombre, dirección, RUC).
-- Gestión de cajeros.
-- Catálogo de productos con CRUD completo.
-- Almacenamiento de la API Key de Google Gemini.
-- **Copia de seguridad**: descarga JSON del estado completo y restauración desde backup.
-- Zona de peligro: borrado total de datos.
+- Next.js 15 (App Router)
+- TypeScript
+- React 19
+- Tailwind CSS v3
+- lucide-react
+- sonner (toasts)
+- Persistencia: localStorage
 
-### 📶 Indicador de Sincronización Offline
-- Badge en la cabecera que muestra el estado de conexión en tiempo real (En línea / Offline).
-- Banner toast al perder o recuperar la conexión con mensaje descriptivo.
-- La app sigue funcionando completamente sin internet gracias al Service Worker y localStorage.
+## Inicio Rapido
 
----
-
-## 🛠️ Stack Tecnológico
-
-| Capa | Tecnología |
-|------|-----------|
-| Framework | Next.js 15 (App Router) |
-| Lenguaje | TypeScript |
-| Estilos | Tailwind CSS v3 |
-| Iconos | Lucide React |
-| IA / OCR | Google Gemini 2.5 Flash Vision API |
-| Almacenamiento | localStorage (100 % offline) |
-| PWA | Web App Manifest + Service Worker |
-| PDF | window.print() con estilos de impresión |
-
----
-
-## 📁 Estructura del Proyecto
-
-```
-src/
-├── app/
-│   ├── nuevo-cuadre-wizard/     # Wizard de 6 pasos
-│   │   ├── page.tsx
-│   │   └── components/
-│   │       ├── StepIndicator.tsx
-│   │       ├── Step1Turno.tsx
-│   │       ├── Step2OCR.tsx
-│   │       ├── Step3Inventario.tsx
-│   │       ├── Step4IngresosGastos.tsx
-│   │       ├── Step5Arqueo.tsx
-│   │       └── Step6Resumen.tsx
-│   ├── historial-de-cuadres/    # Historial y exportación
-│   │   ├── page.tsx
-│   │   └── components/
-│   │       ├── CuadreCard.tsx
-│   │       └── CuadreModal.tsx
-│   ├── ajustes/                 # Configuración y backups
-│   │   ├── page.tsx
-│   │   └── components/
-│   │       ├── ConfigNegocio.tsx
-│   │       └── CatalogoCRUD.tsx
-│   ├── layout.tsx               # Root layout + PWA meta tags
-│   └── page.tsx                 # Redirect a /nuevo-cuadre-wizard
-├── components/
-│   ├── AppLayout.tsx            # Header, nav, indicador offline
-│   └── ui/
-│       ├── SyncIndicator.tsx    # Badge + toast de estado de red
-│       ├── AppLogo.tsx
-│       ├── AppImage.tsx
-│       └── AppIcon.tsx
-├── lib/
-│   └── storage.ts               # CRUD localStorage + auto-backup
-└── styles/
-    ├── index.css
-    └── tailwind.css
-
-public/
-├── manifest.json                # PWA manifest
-├── service-worker.js            # Cache offline
-├── icon-192.png
-└── icon-512.png
-```
-
----
-
-## 🚀 Instalación y Desarrollo
+1. Instalar dependencias.
 
 ```bash
 npm install
+```
+
+2. Ejecutar en desarrollo.
+
+```bash
 npm run dev
 ```
 
-Abre [http://localhost:4028](http://localhost:4028) en tu navegador.
+3. Abrir en navegador.
 
-### Scripts disponibles
+- http://localhost:4028
 
-| Comando | Descripción |
-|---------|-------------|
-| `npm run dev` | Servidor de desarrollo (puerto 4028) |
-| `npm run build` | Build de producción |
-| `npm run start` | Servidor de producción |
-| `npm run lint` | Verificar calidad de código |
-| `npm run format` | Formatear con Prettier |
+## Scripts
 
----
+- npm run dev: servidor de desarrollo (puerto 4028)
+- npm run build: build de produccion
+- npm run start: arranque de app
+- npm run lint: revision de lint
+- npm run lint:fix: auto-fix de lint
+- npm run format: formateo con prettier
+- npm run type-check: chequeo TypeScript sin emitir archivos
 
-## 📱 PWA — Instalación en Móvil
+## Estructura Relevante
 
-1. Abre la app en Chrome (Android) o Safari (iOS).
-2. Toca **"Añadir a pantalla de inicio"** / **"Add to Home Screen"**.
-3. La app se instala como aplicación nativa y funciona sin internet.
+```text
+src/
+    app/
+        nuevo-cuadre-wizard/
+        historial-de-cuadres/
+        ajustes/
+        layout.tsx
+    components/
+        AppLayout.tsx
+        ui/
+            SyncIndicator.tsx
+            ServiceWorkerUpdatePrompt.tsx
+    lib/
+        storage.ts
 
----
+public/
+    manifest.json
+    service-worker.js
+    offline.html
+```
 
-## 🔑 Configuración de Google Gemini (OCR)
+## Persistencia y Seguridad de Datos
 
-1. Ve a [aistudio.google.com](https://aistudio.google.com) → **Get API key** (gratis).
-2. En la app: **Ajustes → API Key de Google Gemini** → pega tu clave.
-3. En el Paso 2 del wizard, fotografía el cuadre anterior y la IA extraerá los productos automáticamente.
+La capa de almacenamiento local esta centralizada en src/lib/storage.ts y aplica medidas para reducir perdida de datos:
 
----
+- Escritura segura con copia sombra por clave.
+- Recuperacion automatica desde copia sombra ante JSON corrupto.
+- Guardado de respaldo automatico al actualizar datos clave.
+- Respaldo incluye:
+    - configuracion
+    - catalogo
+    - historial
+    - borrador del wizard
 
-## 💾 Almacenamiento y Backup
+### Claves de localStorage en uso
 
-Todos los datos se guardan en `localStorage` del navegador:
+- mipyme_config
+- mipyme_catalog
+- mipyme_historial
+- mipyme_draft
+- mipyme_backup
 
-- `cuadres_historial` — lista de cuadres guardados
-- `cuadre_config` — configuración del negocio
-- `cuadre_catalogo` — catálogo de productos
-- `cuadre_backup_*` — snapshots automáticos cada 5 minutos
+Cada una mantiene copia auxiliar con sufijo _shadow para recuperacion.
 
-Para exportar un backup completo: **Ajustes → Copia de seguridad → Descargar backup JSON**.
+## Funcionamiento Offline
 
----
+El service worker en public/service-worker.js implementa:
 
-## 🌐 Demo en Producción
+- Cache de rutas principales y assets criticos.
+- Estrategia network-first para navegacion.
+- Fallback a cache y a public/offline.html cuando no hay red.
+- Estrategia stale-while-revalidate para recursos GET del mismo origen.
+- Exclusiones de origen externo (OCR/API de terceros) para evitar cache incorrecto.
 
-[https://cuadrecaja7449.builtwithrocket.new](https://cuadrecaja7449.builtwithrocket.new)
+## Actualizacion de Nueva Version
 
----
+El componente src/components/ui/ServiceWorkerUpdatePrompt.tsx:
 
-Built with ❤️ on [Rocket.new](https://rocket.new)
+- Detecta cuando existe un service worker nuevo en estado waiting.
+- Muestra banner de nueva version.
+- Permite:
+    - Actualizar ahora: envia SKIP_WAITING, activa nueva version y recarga.
+    - Mas tarde: mantiene version actual sin interrumpir flujo.
+
+Esto evita perder trabajo por recargas forzadas mientras se esta operando.
+
+## Flujo de Respaldos
+
+En Ajustes:
+
+- Descargar respaldo JSON: exporta snapshot completo actual.
+- Importar JSON: previsualiza metadatos antes de confirmar reemplazo.
+- Restaurar: aplica ultimo respaldo automatico local.
+
+El borrador tambien se restaura para continuar donde quedaste.
+
+## OCR (Paso 2)
+
+- Requiere internet y API key de Google Gemini.
+- Si no hay conexion, el paso OCR bloquea escaneo y permite continuar manualmente.
+- La clave API se guarda localmente en configuracion del dispositivo.
+
+## Instalacion como PWA
+
+1. Abrir la app en navegador movil compatible.
+2. Elegir anadir a pantalla de inicio.
+3. Ejecutar como app instalada.
+
+## Verificacion Recomendada de Persistencia
+
+Para validar que no se pierden datos:
+
+1. Crear configuracion, catalogo y un cuadre.
+2. Iniciar un borrador y dejarlo a mitad.
+3. Desconectar internet y recargar.
+4. Verificar que todo sigue visible.
+5. Reconectar, navegar, volver a desconectar.
+6. Confirmar que datos y borrador se mantienen.
+7. Exportar respaldo JSON, borrar datos, importar respaldo y validar restauracion total.
+
+## Demo
+
+https://cuadrecaja7449.builtwithrocket.new

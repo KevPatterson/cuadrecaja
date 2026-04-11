@@ -2,6 +2,7 @@ import React from 'react';
 import type { Metadata, Viewport } from 'next';
 import '../styles/tailwind.css';
 import { Toaster } from 'sonner';
+import ServiceWorkerUpdatePrompt from '@/components/ui/ServiceWorkerUpdatePrompt';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -45,11 +46,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             },
           }}
         />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `if ("serviceWorker" in navigator) { window.addEventListener("load", function() { navigator.serviceWorker.register("/service-worker.js"); }); }`,
-          }}
-        />
+        <ServiceWorkerUpdatePrompt />
       </body>
     </html>
   );
