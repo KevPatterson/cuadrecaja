@@ -6,6 +6,7 @@ import AppLogo from '@/components/ui/AppLogo';
 import { getConfig } from '@/lib/storage';
 import { PlusCircle, History, Settings } from 'lucide-react';
 import Icon from '@/components/ui/AppIcon';
+import SyncIndicator from '@/components/ui/SyncIndicator';
 
 
 const navItems = [
@@ -58,6 +59,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               );
             })}
           </nav>
+          <SyncIndicator />
         </div>
       </header>
 

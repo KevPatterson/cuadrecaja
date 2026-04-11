@@ -386,3 +386,224 @@ export function exportBackupAsJSON(): void {
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
 }
+
+// ─── PDF / Print Export ────────────────────────────────────────────────────────
+
+export function printCuadrePDF(cuadre: Cuadre, negocioNombre: string): void {
+  if (typeof window === 'undefined') return;
+
+  const status = getDiferenciaStatus(cuadre.diferencia);
+  const statusLabel = status === 'cuadra' ? 'CUADRA' : status === 'faltante' ? 'FALTANTE' : 'SOBRANTE';
+  const statusColor = status === 'cuadra' ? '#16a34a' : status === 'faltante' ? '#dc2626' : '#d97706';
+
+  const gastos_total = cuadre.gastos.reduce((s, g) => s + g.monto, 0);
+
+  const productosRows = cuadre.productos.length > 0
+    ? cuadre.productos.map((p, i) => `
+        <tr style="background:${i % 2 === 0 ? '#f9fafb' : '#ffffff'}">
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb">${p.nombre}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:right">${p.precio.toFixed(2)}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.stock_inicio}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.stock_fin}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.vendidos}</td>
+          <td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">${p.subtotal.toFixed(2)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="6" style="padding:10px;text-align:center;color:#6b7280">Sin productos registrados</td></tr>`;
+
+  const gastosRows = cuadre.gastos.length > 0
+    ? cuadre.gastos.map(g => `
+        <tr>
+          <td style="padding:5px 10px;border-bottom:1px solid #e5e7eb">${g.concepto}</td>
+          <td style="padding:5px 10px;border-bottom:1px solid #e5e7eb;text-align:right;color:#dc2626">− ${g.monto.toFixed(2)}</td>
+        </tr>`).join('')
+    : '';
+
+  const activeDenoms = DENOMINATIONS.filter(d => (cuadre.denom_counts[d] || 0) > 0);
+  const denomRows = activeDenoms.length > 0
+    ? activeDenoms.map(d => `
+        <tr>
+          <td style="padding:5px 10px;border-bottom:1px solid #e5e7eb">${d} CUP</td>
+          <td style="padding:5px 10px;border-bottom:1px solid #e5e7eb;text-align:center">× ${cuadre.denom_counts[d]}</td>
+          <td style="padding:5px 10px;border-bottom:1px solid #e5e7eb;text-align:right;font-weight:600">${(d * cuadre.denom_counts[d]).toFixed(2)}</td>
+        </tr>`).join('')
+    : `<tr><td colspan="3" style="padding:10px;text-align:center;color:#6b7280">Sin denominaciones registradas</td></tr>`;
+
+  const printedAt = new Date().toLocaleString('es-CU', {
+    day: '2-digit', month: '2-digit', year: 'numeric',
+    hour: '2-digit', minute: '2-digit',
+  });
+
+  const html = `<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <title>Cuadre de Caja — ${formatDate(cuadre.fecha)}</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: Arial, sans-serif; font-size: 12px; color: #111827; background: #fff; padding: 24px; }
+    .page { max-width: 720px; margin: 0 auto; }
+    /* Header */
+    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 16px; }
+    .header-left h1 { font-size: 20px; font-weight: 700; }
+    .header-left p { font-size: 11px; color: #6b7280; margin-top: 2px; }
+    .header-right { text-align: right; }
+    .status-badge { display: inline-block; padding: 4px 12px; border-radius: 4px; font-weight: 700; font-size: 13px; color: ${statusColor}; border: 2px solid ${statusColor}; }
+    .header-right .diff { font-size: 22px; font-weight: 700; color: ${statusColor}; margin-top: 4px; }
+    /* Meta */
+    .meta { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
+    .meta-item { background: #f3f4f6; border-radius: 6px; padding: 8px 10px; }
+    .meta-item .lbl { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; }
+    .meta-item .val { font-size: 13px; font-weight: 600; margin-top: 2px; }
+    /* Summary */
+    .summary { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+    .summary-card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 12px; }
+    .summary-card .lbl { font-size: 10px; color: #6b7280; text-transform: uppercase; }
+    .summary-card .val { font-size: 15px; font-weight: 700; margin-top: 2px; }
+    /* Section */
+    .section { margin-bottom: 16px; }
+    .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #374151; border-bottom: 1px solid #d1d5db; padding-bottom: 4px; margin-bottom: 8px; }
+    table { width: 100%; border-collapse: collapse; font-size: 11px; }
+    th { background: #111827; color: #fff; padding: 6px 10px; text-align: left; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+    th:not(:first-child) { text-align: right; }
+    th.center { text-align: center; }
+    /* Formula */
+    .formula { background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; }
+    .formula-row { display: flex; justify-content: space-between; padding: 3px 0; font-size: 11px; }
+    .formula-row.total { border-top: 1px solid #d1d5db; margin-top: 4px; padding-top: 6px; font-weight: 700; font-size: 13px; }
+    .formula-row .result { color: ${statusColor}; font-weight: 700; }
+    /* Obs */
+    .obs { background: #fffbeb; border: 1px solid #fcd34d; border-radius: 6px; padding: 10px 14px; margin-bottom: 16px; font-size: 11px; }
+    /* Footer */
+    .footer { border-top: 1px solid #d1d5db; padding-top: 8px; display: flex; justify-content: space-between; font-size: 10px; color: #9ca3af; }
+    @media print {
+      body { padding: 0; }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="page">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <h1>${negocioNombre}</h1>
+      <p>Cuadre de Caja — Registro Oficial</p>
+    </div>
+    <div class="header-right">
+      <div class="status-badge">${statusLabel}</div>
+      <div class="diff">${cuadre.diferencia >= 0 ? '+' : ''}${cuadre.diferencia.toFixed(2)} CUP</div>
+    </div>
+  </div>
+
+  <!-- Meta -->
+  <div class="meta">
+    <div class="meta-item"><div class="lbl">Fecha</div><div class="val">${formatDate(cuadre.fecha)}</div></div>
+    <div class="meta-item"><div class="lbl">Cajero</div><div class="val">${cuadre.cajero}</div></div>
+    <div class="meta-item"><div class="lbl">Turno</div><div class="val">${cuadre.turno}</div></div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="summary">
+    <div class="summary-card"><div class="lbl">Ventas del día</div><div class="val">${cuadre.ventas_total_dia.toFixed(2)} CUP</div></div>
+    <div class="summary-card"><div class="lbl">Ventas inventario</div><div class="val">${cuadre.ventas_inventario.toFixed(2)} CUP</div></div>
+    <div class="summary-card"><div class="lbl">Esperado en caja</div><div class="val">${cuadre.esperado_efectivo.toFixed(2)} CUP</div></div>
+    <div class="summary-card"><div class="lbl">Arqueo físico</div><div class="val">${cuadre.arqueo_total.toFixed(2)} CUP</div></div>
+  </div>
+
+  <!-- Products -->
+  <div class="section">
+    <div class="section-title">Inventario de Productos</div>
+    <table>
+      <thead>
+        <tr>
+          <th>Producto</th>
+          <th style="text-align:right">Precio CUP</th>
+          <th class="center">Inicio</th>
+          <th class="center">Fin</th>
+          <th class="center">Vendidos</th>
+          <th style="text-align:right">Subtotal CUP</th>
+        </tr>
+      </thead>
+      <tbody>${productosRows}</tbody>
+      <tfoot>
+        <tr style="background:#f3f4f6">
+          <td colspan="5" style="padding:6px 10px;font-weight:700;text-align:right">Total ventas inventario:</td>
+          <td style="padding:6px 10px;font-weight:700;text-align:right">${cuadre.ventas_inventario.toFixed(2)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  ${cuadre.gastos.length > 0 ? `
+  <!-- Gastos -->
+  <div class="section">
+    <div class="section-title">Gastos del Turno</div>
+    <table>
+      <thead><tr><th>Concepto</th><th style="text-align:right">Monto CUP</th></tr></thead>
+      <tbody>${gastosRows}</tbody>
+      <tfoot>
+        <tr style="background:#f3f4f6">
+          <td style="padding:6px 10px;font-weight:700;text-align:right">Total gastos:</td>
+          <td style="padding:6px 10px;font-weight:700;text-align:right;color:#dc2626">− ${gastos_total.toFixed(2)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>` : ''}
+
+  <!-- Denominaciones -->
+  <div class="section">
+    <div class="section-title">Arqueo por Denominación</div>
+    <table>
+      <thead><tr><th>Denominación</th><th class="center">Cantidad</th><th style="text-align:right">Subtotal CUP</th></tr></thead>
+      <tbody>${denomRows}</tbody>
+      <tfoot>
+        <tr style="background:#f3f4f6">
+          <td colspan="2" style="padding:6px 10px;font-weight:700;text-align:right">Total arqueo:</td>
+          <td style="padding:6px 10px;font-weight:700;text-align:right">${cuadre.arqueo_total.toFixed(2)}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <!-- Formula -->
+  <div class="section">
+    <div class="section-title">Conciliación</div>
+    <div class="formula">
+      <div class="formula-row"><span>Fondo de apertura</span><span>+ ${cuadre.fondo_apertura.toFixed(2)} CUP</span></div>
+      <div class="formula-row"><span>Ventas en inventario</span><span>+ ${cuadre.ventas_inventario.toFixed(2)} CUP</span></div>
+      ${cuadre.devoluciones > 0 ? `<div class="formula-row"><span>Devoluciones</span><span style="color:#dc2626">− ${cuadre.devoluciones.toFixed(2)} CUP</span></div>` : ''}
+      ${gastos_total > 0 ? `<div class="formula-row"><span>Total gastos</span><span style="color:#dc2626">− ${gastos_total.toFixed(2)} CUP</span></div>` : ''}
+      <div class="formula-row total"><span>Esperado en caja</span><span>${cuadre.esperado_efectivo.toFixed(2)} CUP</span></div>
+      <div class="formula-row total"><span>Arqueo físico</span><span>${cuadre.arqueo_total.toFixed(2)} CUP</span></div>
+      <div class="formula-row total"><span>Diferencia</span><span class="result">${cuadre.diferencia >= 0 ? '+' : ''}${cuadre.diferencia.toFixed(2)} CUP</span></div>
+    </div>
+  </div>
+
+  ${cuadre.observaciones ? `
+  <!-- Observaciones -->
+  <div class="obs">
+    <strong>Observaciones:</strong> ${cuadre.observaciones}
+  </div>` : ''}
+
+  <!-- Footer -->
+  <div class="footer">
+    <span>ID: ${cuadre.id}</span>
+    <span>Impreso: ${printedAt}</span>
+  </div>
+
+  <!-- Print button (hidden when printing) -->
+  <div class="no-print" style="margin-top:24px;text-align:center">
+    <button onClick="window.print()" style="background:#111827;color:#fff;border:none;padding:10px 28px;border-radius:6px;font-size:13px;cursor:pointer;font-weight:600">
+      🖨️ Imprimir / Guardar como PDF
+    </button>
+  </div>
+</div>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank', 'width=800,height=900');
+  if (!printWindow) return;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+}
