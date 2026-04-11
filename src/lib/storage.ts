@@ -345,6 +345,33 @@ export interface BackupSnapshot {
   catalog: CatalogProduct[];
 }
 
+export interface BackupImportResult {
+  ok: boolean;
+  error?: string;
+}
+
+export interface BackupPreview {
+  ts: number;
+  historialCount: number;
+  catalogCount: number;
+  negocioNombre: string;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function normalizeBackupSnapshot(raw: unknown): BackupSnapshot | null {
+  if (!isRecord(raw)) return null;
+
+  const ts = typeof raw.ts === 'number' && Number.isFinite(raw.ts) ? raw.ts : Date.now();
+  const historial = Array.isArray(raw.historial) ? raw.historial as Cuadre[] : [];
+  const catalog = Array.isArray(raw.catalog) ? raw.catalog as CatalogProduct[] : [];
+  const config = normalizeConfig(raw.config);
+
+  return { ts, historial, config, catalog };
+}
+
 export function createBackupSnapshot(): void {
   if (typeof window === 'undefined') return;
   try {
@@ -407,6 +434,46 @@ export function exportBackupAsJSON(): void {
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
+}
+
+export function importBackupFromJSON(jsonText: string): BackupImportResult {
+  if (typeof window === 'undefined') {
+    return { ok: false, error: 'La importación solo está disponible en el navegador.' };
+  }
+
+  try {
+    const parsed = JSON.parse(jsonText);
+    const snapshot = normalizeBackupSnapshot(parsed);
+
+    if (!snapshot) {
+      return { ok: false, error: 'Formato de respaldo inválido.' };
+    }
+
+    localStorage.setItem(KEYS.historial, JSON.stringify(snapshot.historial));
+    localStorage.setItem(KEYS.config, JSON.stringify(snapshot.config));
+    localStorage.setItem(KEYS.catalog, JSON.stringify(snapshot.catalog));
+    localStorage.setItem(BACKUP_KEY, JSON.stringify(snapshot));
+    return { ok: true };
+  } catch {
+    return { ok: false, error: 'No se pudo leer el archivo JSON.' };
+  }
+}
+
+export function getBackupPreviewFromJSON(jsonText: string): BackupPreview | null {
+  try {
+    const parsed = JSON.parse(jsonText);
+    const snapshot = normalizeBackupSnapshot(parsed);
+    if (!snapshot) return null;
+
+    return {
+      ts: snapshot.ts,
+      historialCount: snapshot.historial.length,
+      catalogCount: snapshot.catalog.length,
+      negocioNombre: snapshot.config.nombre,
+    };
+  } catch {
+    return null;
+  }
 }
 
 // ─── PDF / Print Export ────────────────────────────────────────────────────────

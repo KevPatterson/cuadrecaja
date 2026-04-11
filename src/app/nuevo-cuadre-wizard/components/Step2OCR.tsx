@@ -226,7 +226,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
           Cuadre anterior (OCR)
         </h2>
         <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
-          Sube una o varias fotos del cuadre de ayer para pre-llenar el inventario. Los productos se extraen en el orden de las imágenes. Este paso es opcional.
+          Sube una o varias fotos del cuadre (IPV) de ayer para pre-llenar el inventario. Los productos se extraen en el orden de las imágenes. Este paso es opcional.
         </p>
       </div>
 

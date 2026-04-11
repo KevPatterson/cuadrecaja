@@ -1,15 +1,15 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AppLayout from '@/components/AppLayout';
 import ConfigNegocio from './components/ConfigNegocio';
 import CatalogoCRUD from './components/CatalogoCRUD';
 import {
   getConfig, getCatalog, saveConfig,
-  type MipymeConfig, type CatalogProduct,
-  getBackupSnapshot, exportBackupAsJSON, restoreFromBackup,
+  type MipymeConfig, type CatalogProduct, type BackupPreview,
+  getBackupSnapshot, exportBackupAsJSON, restoreFromBackup, importBackupFromJSON, getBackupPreviewFromJSON,
   startAutoBackup,
 } from '@/lib/storage';
-import { Settings, Trash2, AlertTriangle, Eye, EyeOff, Key, ShieldCheck, Download, RotateCcw } from 'lucide-react';
+import { Settings, Trash2, AlertTriangle, Eye, EyeOff, Key, ShieldCheck, Download, RotateCcw, Upload } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function AjustesPage() {
@@ -21,6 +21,10 @@ export default function AjustesPage() {
   const [savingKey, setSavingKey] = useState(false);
   const [backupTs, setBackupTs] = useState<number | null>(null);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [showImportConfirm, setShowImportConfirm] = useState(false);
+  const [pendingImportRaw, setPendingImportRaw] = useState<string | null>(null);
+  const [pendingImportPreview, setPendingImportPreview] = useState<BackupPreview | null>(null);
+  const importInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     const cfg = getConfig();
@@ -87,6 +91,65 @@ export default function AjustesPage() {
       toast.error('No se encontró ninguna copia de seguridad para restaurar.');
       setShowRestoreConfirm(false);
     }
+  };
+
+  const handleImportBackupClick = () => {
+    importInputRef.current?.click();
+  };
+
+  const applyImportedBackup = (raw: string) => {
+    const result = importBackupFromJSON(raw);
+
+    if (!result.ok) {
+      toast.error(result.error || 'No se pudo importar el respaldo.');
+      return;
+    }
+
+    const cfg = getConfig();
+    setConfig(cfg);
+    setApiKey(cfg.gemini_key || '');
+    setCatalog(getCatalog());
+    const snapshot = getBackupSnapshot();
+    if (snapshot) setBackupTs(snapshot.ts);
+    toast.success('Respaldo importado correctamente.');
+  };
+
+  const handleImportBackupFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const raw = await file.text();
+      const preview = getBackupPreviewFromJSON(raw);
+      if (!preview) {
+        toast.error('El archivo no tiene formato de respaldo válido.');
+        return;
+      }
+      setPendingImportRaw(raw);
+      setPendingImportPreview(preview);
+      setShowImportConfirm(true);
+    } catch {
+      toast.error('No se pudo leer el archivo seleccionado.');
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const handleConfirmImport = () => {
+    if (!pendingImportRaw) {
+      setShowImportConfirm(false);
+      return;
+    }
+    applyImportedBackup(pendingImportRaw);
+    setPendingImportRaw(null);
+    setPendingImportPreview(null);
+    setShowImportConfirm(false);
+  };
+
+  const handleCancelImport = () => {
+    setPendingImportRaw(null);
+    setPendingImportPreview(null);
+    setShowImportConfirm(false);
   };
 
   const handleClearAll = () => {
@@ -217,6 +280,14 @@ export default function AjustesPage() {
             Los datos se respaldan automáticamente cada 5 minutos en este dispositivo. Descarga el archivo JSON para guardar una copia externa.
           </p>
 
+          <input
+            ref={importInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={handleImportBackupFile}
+          />
+
           <div className="flex gap-2">
             <button
               type="button"
@@ -230,6 +301,19 @@ export default function AjustesPage() {
             >
               <Download size={14} />
               Descargar respaldo
+            </button>
+            <button
+              type="button"
+              onClick={handleImportBackupClick}
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
+              style={{
+                background: 'var(--bg)',
+                borderColor: 'var(--ink)',
+                color: 'var(--ink)',
+              }}
+            >
+              <Upload size={14} />
+              Importar JSON
             </button>
             <button
               type="button"
@@ -267,6 +351,53 @@ export default function AjustesPage() {
                   type="button"
                   className="btn-ghost flex-1 justify-center text-sm"
                   onClick={() => setShowRestoreConfirm(false)}
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
+
+          {showImportConfirm && (
+            <div
+              className="p-4 space-y-3 animate-fade-in"
+              style={{ background: 'var(--bg-alt)', border: '2px solid var(--amber)' }}
+            >
+              <p className="text-sm font-semibold" style={{ color: 'var(--amber)' }}>
+                ¿Importar este respaldo JSON? Los datos actuales serán reemplazados.
+              </p>
+              {pendingImportPreview && (
+                <div
+                  className="p-3 space-y-1.5"
+                  style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
+                >
+                  <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+                    Negocio: <span className="font-semibold">{pendingImportPreview.negocioNombre || 'Mi Negocio'}</span>
+                  </p>
+                  <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+                    Fecha del respaldo: <span className="font-semibold">{formatBackupTime(pendingImportPreview.ts)}</span>
+                  </p>
+                  <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+                    Cuadres en historial: <span className="font-semibold">{pendingImportPreview.historialCount}</span>
+                  </p>
+                  <p className="text-xs" style={{ color: 'hsl(var(--text-secondary))' }}>
+                    Productos en catálogo: <span className="font-semibold">{pendingImportPreview.catalogCount}</span>
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleConfirmImport}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold transition-all duration-150"
+                  style={{ background: 'var(--amber)', color: 'var(--bg)', border: '2px solid var(--ink)' }}
+                >
+                  <Upload size={13} />Sí, importar
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost flex-1 justify-center text-sm"
+                  onClick={handleCancelImport}
                 >
                   Cancelar
                 </button>
