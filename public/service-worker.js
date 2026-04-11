@@ -16,7 +16,13 @@ function isSameOrigin(url) {
 }
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
+  e.waitUntil(
+    caches.open(CACHE).then(async cache => {
+      await Promise.allSettled(
+        ASSETS.map(asset => cache.add(asset))
+      );
+    })
+  );
 });
 
 self.addEventListener("message", event => {
@@ -55,7 +61,12 @@ self.addEventListener("fetch", event => {
           if (cached) return cached;
           const home = await caches.match("/");
           if (home) return home;
-          return caches.match(OFFLINE_URL);
+          const offline = await caches.match(OFFLINE_URL);
+          if (offline) return offline;
+          return new Response("Sin conexion", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
         })
     );
     return;
