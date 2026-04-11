@@ -55,7 +55,7 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
       className="card p-5 space-y-5"
     >
       <div className="flex items-center gap-2 mb-1">
-        <Building2 size={18} style={{ color: 'hsl(var(--primary-light))' }} />
+        <Building2 size={18} style={{ color: 'var(--ink)' }} />
         <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
           Datos del Negocio
         </h2>
@@ -79,7 +79,7 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
           <span className="flex items-center gap-1.5"><DollarSign size={11} />Fondo base de apertura (CUP)</span>
         </label>
         <p className="text-xs mb-1.5" style={{ color: 'hsl(var(--text-muted))' }}>
-          Se pre-llena automáticamente en cada nuevo cuadre
+          Se rellena automáticamente en cada nuevo cuadre
         </p>
         <input
           type="number"
@@ -105,11 +105,11 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
           {cajeros.map(c => (
             <span
               key={`cajero-tag-${c}`}
-              className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-sm font-medium"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-sm font-medium"
               style={{
-                background: 'hsl(var(--surface-3))',
-                color: 'hsl(var(--text-secondary))',
-                border: '1px solid hsl(var(--border))',
+                background: 'var(--bg-alt)',
+                color: 'var(--ink)',
+                border: '2px solid var(--ink)',
               }}
             >
               {c}

@@ -179,7 +179,7 @@ export default function NuevoCuadrePage() {
 
       const status = getDiferenciaStatus(diferencia);
       if (status === 'cuadra') {
-        toast.success('¡Cuadre guardado! La caja cuadra perfectamente.');
+        toast.success('Cuadre guardado. La caja cuadra.');
       } else if (status === 'faltante') {
         toast.error(`Cuadre guardado con faltante de ${Math.abs(diferencia).toFixed(2)} CUP.`);
       } else {
@@ -188,7 +188,7 @@ export default function NuevoCuadrePage() {
 
       setTimeout(() => router.push('/historial-de-cuadres'), 1200);
     } catch {
-      toast.error('Error al guardar el cuadre. Intenta de nuevo.');
+      toast.error('No se pudo guardar el cuadre. Intenta nuevamente.');
     } finally {
       setSaving(false);
     }
@@ -200,7 +200,7 @@ export default function NuevoCuadrePage() {
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-2xl font-bold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
-            Nuevo Cuadre
+            Nuevo cuadre
           </h1>
           <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
             Paso {step} de 6
@@ -214,7 +214,7 @@ export default function NuevoCuadrePage() {
 
         {/* Step content */}
         <div
-          className="card p-5 mb-6"
+          className="ledger-shell p-5 mb-6"
           style={{ minHeight: '400px' }}
         >
           {step === 1 && (
@@ -286,7 +286,7 @@ export default function NuevoCuadrePage() {
                 className="btn-primary flex-1 justify-center"
                 onClick={handleNext}
               >
-                {step === 5 ? 'Ver Resumen' : 'Continuar'}
+                {step === 5 ? 'Ver resumen' : 'Continuar'}
                 <ChevronRight size={16} />
               </button>
             )}

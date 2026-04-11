@@ -39,7 +39,7 @@ export default function HistorialPage() {
       return;
     }
     exportHistorialToCSV(historial);
-    toast.success(`${historial.length} cuadre${historial.length !== 1 ? 's' : ''} exportado${historial.length !== 1 ? 's' : ''} a CSV.`);
+    toast.success(`Se exportaron ${historial.length} cuadre${historial.length !== 1 ? 's' : ''} a CSV.`);
   };
 
   const handleImportClick = () => {
@@ -56,8 +56,8 @@ export default function HistorialPage() {
       setHistorial(getHistorial());
       if (result.imported > 0) {
         toast.success(
-          `Importados ${result.imported} cuadre${result.imported !== 1 ? 's' : ''}.` +
-          (result.skipped > 0 ? ` ${result.skipped} omitido${result.skipped !== 1 ? 's' : ''} (ya existían).` : '')
+          `Se importaron ${result.imported} cuadre${result.imported !== 1 ? 's' : ''}.` +
+          (result.skipped > 0 ? ` ${result.skipped} omitido${result.skipped !== 1 ? 's' : ''} por duplicado.` : '')
         );
       } else if (result.skipped > 0) {
         toast.info(`Todos los cuadres del archivo ya existen (${result.skipped} omitidos).`);
@@ -106,7 +106,7 @@ export default function HistorialPage() {
                 Historial de Cuadres
               </h1>
               <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
-                {loaded ? `${historial.length} cuadre${historial.length !== 1 ? 's' : ''} guardado${historial.length !== 1 ? 's' : ''}` : 'Cargando...'}
+                {loaded ? `${historial.length} cuadre${historial.length !== 1 ? 's' : ''} guardado${historial.length !== 1 ? 's' : ''}` : 'Cargando historial...'}
               </p>
             </div>
             {/* Export / Import actions */}
@@ -116,11 +116,11 @@ export default function HistorialPage() {
                 onClick={handleImportClick}
                 disabled={importing}
                 title="Importar CSV"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 border"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
                 style={{
-                  background: 'hsl(var(--surface-2))',
-                  borderColor: 'hsl(var(--border))',
-                  color: 'hsl(var(--text-secondary))',
+                  background: 'var(--bg)',
+                  borderColor: 'var(--ink)',
+                  color: 'var(--ink)',
                 }}
               >
                 {importing ? (
@@ -137,11 +137,11 @@ export default function HistorialPage() {
                 type="button"
                 onClick={handleExportCSV}
                 title="Exportar CSV"
-                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-150 border"
+                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold transition-all duration-150 border"
                 style={{
-                  background: 'hsl(var(--primary-dim))',
-                  borderColor: 'hsl(var(--primary) / 0.3)',
-                  color: 'hsl(var(--primary-light))',
+                  background: 'var(--ink)',
+                  borderColor: 'var(--ink)',
+                  color: 'var(--bg)',
                 }}
               >
                 <Download size={13} />
@@ -189,23 +189,20 @@ export default function HistorialPage() {
               key={`filter-${f.key}`}
               type="button"
               onClick={() => setFilterStatus(f.key)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 border shrink-0"
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold whitespace-nowrap transition-all duration-150 border shrink-0"
               style={{
                 background:
-                  filterStatus === f.key
-                    ? f.key === 'cuadra' ? 'hsl(var(--primary-dim))'
-                      : f.key === 'faltante' ? 'hsl(var(--danger-dim))'
-                      : f.key === 'sobrante' ? 'hsl(var(--warning-dim))' : 'hsl(var(--surface-3))' : 'hsl(var(--surface-2))',
+                  filterStatus === f.key ? 'var(--bg-alt)' : 'var(--bg)',
                 borderColor:
                   filterStatus === f.key
-                    ? f.key === 'cuadra' ? 'hsl(var(--primary) / 0.4)'
-                      : f.key === 'faltante' ? 'hsl(var(--danger) / 0.4)'
-                      : f.key === 'sobrante' ? 'hsl(var(--warning) / 0.4)' : 'hsl(var(--border))' : 'hsl(var(--border))',
+                    ? f.key === 'cuadra' ? 'var(--green)'
+                      : f.key === 'faltante' ? 'var(--red)'
+                      : f.key === 'sobrante' ? 'var(--amber)' : 'var(--ink)' : 'var(--ink)',
                 color:
                   filterStatus === f.key
-                    ? f.key === 'cuadra' ? 'hsl(var(--primary-light))'
-                      : f.key === 'faltante' ? 'hsl(var(--danger))'
-                      : f.key === 'sobrante' ? 'hsl(var(--warning))' : 'hsl(var(--text-primary))' : 'hsl(var(--text-muted))',
+                    ? f.key === 'cuadra' ? 'var(--green)'
+                      : f.key === 'faltante' ? 'var(--red)'
+                      : f.key === 'sobrante' ? 'var(--amber)' : 'var(--ink)' : 'var(--ink-muted)',
               }}
             >
               <SlidersHorizontal size={11} />
@@ -231,8 +228,8 @@ export default function HistorialPage() {
           </div>
         ) : filtered.length === 0 ? (
           <div
-            className="rounded-xl p-10 text-center"
-            style={{ background: 'hsl(var(--surface-2))', border: '1px dashed hsl(var(--border))' }}
+            className="p-10 text-center"
+            style={{ background: 'var(--bg)', border: '2px dashed var(--ink)' }}
           >
             <History size={36} className="mx-auto mb-3" style={{ color: 'hsl(var(--text-muted))' }} />
             <p className="text-sm font-semibold mb-1" style={{ color: 'hsl(var(--text-secondary))' }}>

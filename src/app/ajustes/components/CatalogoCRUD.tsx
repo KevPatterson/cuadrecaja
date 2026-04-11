@@ -35,7 +35,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
     saveCatalog(updated);
     onCatalogChange(updated);
     setEditingId(null);
-    toast.success('Producto actualizado.');
+    toast.success('Producto actualizado en el catálogo.');
   };
 
   const cancelEdit = () => setEditingId(null);
@@ -68,14 +68,14 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
     <div className="card p-5 space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <Package size={18} style={{ color: 'hsl(var(--primary-light))' }} />
+          <Package size={18} style={{ color: 'var(--ink)' }} />
           <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
-            Catálogo de Productos
+            Catálogo de productos
           </h2>
         </div>
         <span
-          className="text-xs font-semibold px-2 py-0.5 rounded-full"
-          style={{ background: 'hsl(var(--surface-3))', color: 'hsl(var(--text-muted))' }}
+          className="text-xs font-semibold px-2 py-0.5"
+          style={{ background: 'var(--bg-alt)', color: 'var(--ink-muted)', border: '1px solid var(--ink)' }}
         >
           {catalog.length} productos
         </span>
@@ -91,13 +91,13 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
           {catalog.map(prod => (
             <div
               key={`catalog-prod-${prod.id}`}
-              className="rounded-xl overflow-hidden transition-all duration-150"
-              style={{ border: '1px solid hsl(var(--border))' }}
+              className="overflow-hidden transition-all duration-150"
+              style={{ border: '2px solid var(--ink)' }}
             >
               {editingId === prod.id ? (
                 <div
                   className="p-3 space-y-2 animate-fade-in"
-                  style={{ background: 'hsl(var(--primary-dim))' }}
+                  style={{ background: 'var(--bg-alt)' }}
                 >
                   <div className="grid grid-cols-2 gap-2">
                     <div className="col-span-2">
@@ -147,9 +147,9 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
               ) : confirmDeleteId === prod.id ? (
                 <div
                   className="p-3 space-y-2 animate-fade-in"
-                  style={{ background: 'hsl(var(--danger-dim))' }}
+                  style={{ background: 'var(--bg-alt)' }}
                 >
-                  <p className="text-sm font-medium" style={{ color: 'hsl(var(--danger))' }}>
+                  <p className="text-sm font-medium" style={{ color: 'var(--red)' }}>
                     ¿Eliminar &quot;{prod.nombre}&quot;?
                   </p>
                   <div className="flex gap-2">
@@ -172,7 +172,7 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
               ) : (
                 <div
                   className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-white/3"
-                  style={{ background: 'hsl(var(--surface-2))' }}
+                  style={{ background: 'var(--bg)' }}
                 >
                   <div>
                     <p className="text-sm font-medium" style={{ color: 'hsl(var(--text-primary))' }}>
@@ -209,8 +209,8 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
         </div>
       ) : (
         <div
-          className="rounded-xl p-8 text-center"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px dashed hsl(var(--border))' }}
+          className="p-8 text-center"
+          style={{ background: 'var(--bg)', border: '2px dashed var(--ink)' }}
         >
           <Package size={28} className="mx-auto mb-2" style={{ color: 'hsl(var(--text-muted))' }} />
           <p className="text-sm font-medium mb-1" style={{ color: 'hsl(var(--text-secondary))' }}>
@@ -225,8 +225,8 @@ export default function CatalogoCRUD({ catalog, onCatalogChange }: Props) {
       {/* Add form */}
       {showAddForm ? (
         <div
-          className="rounded-xl p-4 space-y-3 animate-fade-in"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--primary) / 0.3)' }}
+          className="p-4 space-y-3 animate-fade-in"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Nuevo producto

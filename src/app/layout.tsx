@@ -21,8 +21,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es">
       <head>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet" />
         <link rel="manifest" href="/manifest.json" />
-        <meta name="theme-color" content="#0f0f0f" />
+        <meta name="theme-color" content="#0d0d0d" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Cuadre" />
@@ -35,10 +36,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           position="bottom-center"
           toastOptions={{
             style: {
-              background: 'hsl(222 35% 11%)',
-              border: '1px solid hsl(222 25% 20%)',
-              color: 'hsl(210 40% 96%)',
-              fontFamily: 'DM Sans, sans-serif',
+              background: '#f5f0e8',
+              border: '2px solid #0d0d0d',
+              color: '#0d0d0d',
+              boxShadow: '4px 4px 0 #0d0d0d',
+              fontFamily: 'DM Mono, monospace',
               fontSize: '14px',
             },
           }}

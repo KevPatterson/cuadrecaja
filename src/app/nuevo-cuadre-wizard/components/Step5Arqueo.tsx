@@ -32,11 +32,11 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
           </p>
         </div>
         <div
-          className="text-right shrink-0 rounded-lg px-3 py-2"
-          style={{ background: 'hsl(var(--primary-dim))' }}
+          className="text-right shrink-0 px-3 py-2"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
-          <p className="text-xs font-medium" style={{ color: 'hsl(var(--primary-light))' }}>Total</p>
-          <p className="font-mono-nums text-base font-bold" style={{ color: 'hsl(var(--primary-light))' }}>
+          <p className="text-xs font-medium" style={{ color: 'var(--ink-muted)' }}>Total</p>
+          <p className="font-mono-nums text-base font-bold" style={{ color: 'var(--ink)' }}>
             {formatCUP(total)}
           </p>
         </div>
@@ -50,18 +50,18 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
           return (
             <div
               key={`denom-${denom}`}
-              className="flex items-center gap-3 rounded-xl px-4 py-3 transition-all duration-150"
+              className="flex items-center gap-3 px-4 py-3 transition-all duration-150"
               style={{
-                background: isActive ? 'hsl(var(--primary-dim))' : 'hsl(var(--surface-2))',
-                border: `1px solid ${isActive ? 'hsl(var(--primary) / 0.3)' : 'hsl(var(--border))'}`,
+                background: isActive ? 'var(--bg-alt)' : 'var(--bg)',
+                border: `2px solid var(--ink)`,
               }}
             >
               {/* Denomination label */}
               <div className="flex items-center gap-2 w-20 shrink-0">
-                <Coins size={14} style={{ color: isActive ? 'hsl(var(--primary-light))' : 'hsl(var(--text-muted))' }} />
+                <Coins size={14} style={{ color: isActive ? 'var(--ink)' : 'var(--ink-muted)' }} />
                 <span
                   className="font-mono-nums text-sm font-bold"
-                  style={{ color: isActive ? 'hsl(var(--primary-light))' : 'hsl(var(--text-secondary))' }}
+                  style={{ color: isActive ? 'var(--ink)' : 'var(--ink-muted)' }}
                 >
                   {denom >= 1000
                     ? `${(denom / 1000).toFixed(0)}k`
@@ -76,10 +76,11 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
                   type="button"
                   onClick={() => update(denom, qty - 1)}
                   disabled={qty === 0}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold transition-all duration-150 disabled:opacity-30"
+                  className="w-8 h-8 flex items-center justify-center text-lg font-bold transition-all duration-150 disabled:opacity-30"
                   style={{
-                    background: 'hsl(var(--surface-3))',
-                    color: 'hsl(var(--text-secondary))',
+                    background: 'var(--bg-alt)',
+                    color: 'var(--ink)',
+                    border: '1px solid var(--ink)',
                   }}
                 >
                   −
@@ -96,10 +97,11 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
                 <button
                   type="button"
                   onClick={() => update(denom, qty + 1)}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold transition-all duration-150"
+                  className="w-8 h-8 flex items-center justify-center text-lg font-bold transition-all duration-150"
                   style={{
-                    background: 'hsl(var(--primary-dim))',
-                    color: 'hsl(var(--primary-light))',
+                    background: 'var(--ink)',
+                    color: 'var(--bg)',
+                    border: '1px solid var(--ink)',
                   }}
                 >
                   +
@@ -111,7 +113,7 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
                 <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>Subtotal</p>
                 <p
                   className="font-mono-nums text-sm font-semibold"
-                  style={{ color: isActive ? 'hsl(var(--primary-light))' : 'hsl(var(--text-muted))' }}
+                  style={{ color: isActive ? 'var(--ink)' : 'var(--ink-muted)' }}
                 >
                   {subtotal.toFixed(2)}
                 </p>
@@ -123,8 +125,8 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
 
       {/* Summary bar */}
       <div
-        className="rounded-xl p-4 flex items-center justify-between"
-        style={{ background: 'hsl(var(--surface-3))', border: '1px solid hsl(var(--border-subtle))' }}
+        className="p-4 flex items-center justify-between"
+        style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
       >
         <div>
           <p className="text-xs font-medium" style={{ color: 'hsl(var(--text-muted))' }}>
@@ -140,7 +142,7 @@ export default function Step5Arqueo({ denomCounts, onChange }: Props) {
           </p>
           <p
             className="font-mono-nums text-xl font-bold"
-            style={{ color: total > 0 ? 'hsl(var(--primary-light))' : 'hsl(var(--text-muted))' }}
+            style={{ color: total > 0 ? 'var(--ink)' : 'var(--ink-muted)' }}
           >
             {formatCUP(total)}
           </p>

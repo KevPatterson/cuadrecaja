@@ -18,34 +18,34 @@ export default function NotFound() {
     };
 
     return (
-        <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
+        <div className="min-h-screen flex flex-col items-center justify-center p-4" style={{ background: 'var(--bg)' }}>
             <div className="text-center max-w-md">
                 <div className="flex justify-center mb-6">
                     <div className="relative">
-                        <h1 className="text-9xl font-bold text-primary opacity-20">404</h1>
+                        <h1 className="text-9xl font-bold" style={{ color: 'var(--ink)', opacity: 0.22 }}>404</h1>
                     </div>
                 </div>
 
-                <h2 className="text-2xl font-medium text-onBackground mb-2">Page Not Found</h2>
-                <p className="text-onBackground/70 mb-8">
-                    The page you're looking for doesn't exist. Let's get you back!
+                <h2 className="text-2xl font-medium mb-2" style={{ color: 'var(--ink)' }}>Página no encontrada</h2>
+                <p className="mb-8" style={{ color: 'var(--ink-muted)' }}>
+                    La página que buscas no existe. Volvamos al libro mayor.
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <button
                         onClick={handleGoBack}
-                        className="inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-6 py-3 rounded-lg font-medium hover:bg-primary/90 transition-colors duration-200"
+                        className="btn-primary inline-flex items-center justify-center gap-2 px-6 py-3 font-medium"
                     >
                         <Icon name="ArrowLeftIcon" size={16} />
-                        Go Back
+                        Volver
                     </button>
 
                     <button
                         onClick={handleGoHome}
-                        className="inline-flex items-center justify-center gap-2 border border-border bg-background text-foreground px-6 py-3 rounded-lg font-medium hover:bg-accent hover:text-accent-foreground transition-colors duration-200"
+                        className="btn-ghost inline-flex items-center justify-center gap-2 px-6 py-3 font-medium"
                     >
                         <Icon name="HomeIcon" size={16} />
-                        Back to Home
+                        Ir al inicio
                     </button>
                 </div>
             </div>

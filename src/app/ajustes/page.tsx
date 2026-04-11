@@ -59,7 +59,7 @@ export default function AjustesPage() {
     const updated = { ...config, gemini_key: apiKey.trim() };
     saveConfig(updated);
     setConfig(updated);
-    toast.success('API key guardada correctamente.');
+    toast.success('Clave API guardada correctamente.');
     setSavingKey(false);
   };
 
@@ -113,7 +113,7 @@ export default function AjustesPage() {
         {/* Header */}
         <div className="mb-2">
           <div className="flex items-center gap-2 mb-1">
-            <Settings size={22} style={{ color: 'hsl(var(--primary-light))' }} />
+            <Settings size={22} style={{ color: 'var(--ink)' }} />
             <h1 className="text-2xl font-bold" style={{ color: 'hsl(var(--text-primary))' }}>
               Ajustes
             </h1>
@@ -129,19 +129,19 @@ export default function AjustesPage() {
         {/* API Key Gemini */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <Key size={18} style={{ color: 'hsl(var(--primary-light))' }} />
+            <Key size={18} style={{ color: 'var(--ink)' }} />
             <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
-              API Key de Google Gemini (OCR)
+              Clave API de Google Gemini (OCR)
             </h2>
           </div>
           <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>
-            Necesaria para el paso de OCR. Se guarda únicamente en este dispositivo. Obtén tu key en{' '}
+            Necesaria para el paso de OCR. Se guarda únicamente en este dispositivo. Obtén tu clave en{' '}
             <a
               href="https://aistudio.google.com/app/apikey"
               target="_blank"
               rel="noopener noreferrer"
               className="underline underline-offset-2 transition-colors"
-              style={{ color: 'hsl(var(--primary-light))' }}
+              style={{ color: 'var(--ink)' }}
             >
               aistudio.google.com
             </a>
@@ -178,7 +178,7 @@ export default function AjustesPage() {
                 Guardando...
               </>
             ) : (
-              <><Key size={14} />Guardar API Key</>
+              <><Key size={14} />Guardar clave API</>
             )}
           </button>
         </div>
@@ -189,7 +189,7 @@ export default function AjustesPage() {
         {/* Backup & Recovery */}
         <div className="card p-5 space-y-4">
           <div className="flex items-center gap-2">
-            <ShieldCheck size={18} style={{ color: 'hsl(var(--primary-light))' }} />
+            <ShieldCheck size={18} style={{ color: 'var(--ink)' }} />
             <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
               Copia de seguridad
             </h2>
@@ -197,10 +197,10 @@ export default function AjustesPage() {
 
           {/* Auto-backup status */}
           <div
-            className="flex items-center gap-3 rounded-lg px-3 py-2.5"
-            style={{ background: 'hsl(var(--surface-3))', border: '1px solid hsl(var(--border-subtle))' }}
+            className="flex items-center gap-3 px-3 py-2.5"
+            style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
           >
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: 'hsl(var(--primary-light))' }} />
+            <span className="w-2 h-2 shrink-0" style={{ background: 'var(--ink)' }} />
             <div className="min-w-0">
               <p className="text-xs font-semibold" style={{ color: 'hsl(var(--text-secondary))' }}>
                 Respaldo automático activo
@@ -221,24 +221,24 @@ export default function AjustesPage() {
             <button
               type="button"
               onClick={handleDownloadBackup}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
               style={{
-                background: 'hsl(var(--primary-dim))',
-                borderColor: 'hsl(var(--primary) / 0.3)',
-                color: 'hsl(var(--primary-light))',
+                background: 'var(--ink)',
+                borderColor: 'var(--ink)',
+                color: 'var(--bg)',
               }}
             >
               <Download size={14} />
-              Descargar backup
+              Descargar respaldo
             </button>
             <button
               type="button"
               onClick={() => setShowRestoreConfirm(true)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 border"
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 border"
               style={{
-                background: 'hsl(var(--surface-2))',
-                borderColor: 'hsl(var(--border))',
-                color: 'hsl(var(--text-secondary))',
+                background: 'var(--bg)',
+                borderColor: 'var(--ink)',
+                color: 'var(--ink)',
               }}
             >
               <RotateCcw size={14} />
@@ -248,18 +248,18 @@ export default function AjustesPage() {
 
           {showRestoreConfirm && (
             <div
-              className="rounded-xl p-4 space-y-3 animate-fade-in"
-              style={{ background: 'hsl(var(--warning-dim))', border: '1px solid hsl(var(--warning) / 0.3)' }}
+              className="p-4 space-y-3 animate-fade-in"
+              style={{ background: 'var(--bg-alt)', border: '2px solid var(--amber)' }}
             >
-              <p className="text-sm font-semibold" style={{ color: 'hsl(var(--warning))' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--amber)' }}>
                 ¿Restaurar desde el último respaldo automático? Los datos actuales serán reemplazados.
               </p>
               <div className="flex gap-2">
                 <button
                   type="button"
                   onClick={handleRestoreBackup}
-                  className="flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-semibold transition-all duration-150"
-                  style={{ background: 'hsl(var(--warning))', color: '#000' }}
+                  className="flex-1 flex items-center justify-center gap-2 py-2 text-sm font-semibold transition-all duration-150"
+                  style={{ background: 'var(--amber)', color: 'var(--bg)', border: '2px solid var(--ink)' }}
                 >
                   <RotateCcw size={13} />Sí, restaurar
                 </button>
@@ -278,11 +278,11 @@ export default function AjustesPage() {
         {/* Danger zone */}
         <div
           className="card p-5 space-y-4"
-          style={{ borderColor: 'hsl(var(--danger) / 0.2)' }}
+          style={{ borderColor: 'var(--red)' }}
         >
           <div className="flex items-center gap-2">
-            <AlertTriangle size={18} style={{ color: 'hsl(var(--danger))' }} />
-            <h2 className="text-base font-semibold" style={{ color: 'hsl(var(--danger))' }}>
+            <AlertTriangle size={18} style={{ color: 'var(--red)' }} />
+            <h2 className="text-base font-semibold" style={{ color: 'var(--red)' }}>
               Zona de peligro
             </h2>
           </div>
@@ -294,8 +294,8 @@ export default function AjustesPage() {
               </p>
               <button
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
-                style={{ color: 'hsl(var(--danger))', border: '1px solid hsl(var(--danger) / 0.3)' }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
+                style={{ color: 'var(--red)', border: '2px solid var(--red)' }}
                 onClick={() => setShowClearConfirm(true)}
               >
                 <Trash2 size={15} />Borrar todos los datos
@@ -303,10 +303,10 @@ export default function AjustesPage() {
             </div>
           ) : (
             <div
-              className="rounded-xl p-4 space-y-3 animate-fade-in"
-              style={{ background: 'hsl(var(--danger-dim))', border: '1px solid hsl(var(--danger) / 0.3)' }}
+              className="p-4 space-y-3 animate-fade-in"
+              style={{ background: 'var(--bg-alt)', border: '2px solid var(--red)' }}
             >
-              <p className="text-sm font-semibold" style={{ color: 'hsl(var(--danger))' }}>
+              <p className="text-sm font-semibold" style={{ color: 'var(--red)' }}>
                 ¿Estás seguro? Esta acción eliminará permanentemente todos los datos. No se puede deshacer.
               </p>
               <div className="flex gap-2">
@@ -331,8 +331,8 @@ export default function AjustesPage() {
 
         {/* App info */}
         <div
-          className="rounded-xl p-4 text-center"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border-subtle))' }}
+          className="p-4 text-center"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <p className="text-xs font-semibold" style={{ color: 'hsl(var(--text-muted))' }}>
             CuadreCaja

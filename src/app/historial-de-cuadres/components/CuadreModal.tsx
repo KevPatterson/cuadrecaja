@@ -15,9 +15,9 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
   const [confirmDelete, setConfirmDelete] = React.useState(false);
 
   const statusColors = {
-    cuadra: { color: 'hsl(var(--primary-light))', bg: 'hsl(var(--primary-dim))', label: 'Cuadra' },
-    faltante: { color: 'hsl(var(--danger))', bg: 'hsl(var(--danger-dim))', label: 'Faltante' },
-    sobrante: { color: 'hsl(var(--warning))', bg: 'hsl(var(--warning-dim))', label: 'Sobrante' },
+    cuadra: { color: 'var(--green)', bg: 'var(--bg-alt)', label: 'Cuadra' },
+    faltante: { color: 'var(--red)', bg: 'var(--bg-alt)', label: 'Faltante' },
+    sobrante: { color: 'var(--amber)', bg: 'var(--bg-alt)', label: 'Sobrante' },
   };
   const sc = statusColors[status];
 
@@ -28,10 +28,11 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div
-        className="w-full sm:max-w-lg animate-slide-up rounded-t-2xl sm:rounded-2xl overflow-hidden flex flex-col"
+        className="w-full sm:max-w-lg animate-slide-up overflow-hidden flex flex-col"
         style={{
-          background: 'hsl(var(--surface))',
-          border: '1px solid hsl(var(--border))',
+          background: 'var(--bg)',
+          border: '2px solid var(--ink)',
+          boxShadow: '4px 4px 0 var(--ink)',
           maxHeight: '92vh',
         }}
       >
@@ -46,7 +47,7 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
                 Cuadre — {formatDate(cuadre.fecha)}
               </h2>
               <span
-                className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                className="text-xs font-semibold px-2 py-0.5"
                 style={{ background: sc.bg, color: sc.color }}
               >
                 {sc.label}
@@ -75,8 +76,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
         <div className="overflow-y-auto scrollbar-thin flex-1 px-5 py-4 space-y-5">
           {/* Difference highlight */}
           <div
-            className="rounded-xl p-4 flex items-center justify-between"
-            style={{ background: sc.bg, border: `1px solid ${sc.color}40` }}
+            className="p-4 flex items-center justify-between"
+            style={{ background: sc.bg, border: `2px solid ${sc.color}` }}
           >
             <div>
               <p className="text-xs font-medium" style={{ color: sc.color, opacity: 0.8 }}>Diferencia</p>
@@ -99,8 +100,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
               return (
                 <div
                   key={`modal-metric-${m.id}`}
-                  className="rounded-xl p-3"
-                  style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border-subtle))' }}
+                  className="p-3"
+                  style={{ background: 'var(--bg-alt)', border: '1px solid var(--ink)' }}
                 >
                   <div className="flex items-center gap-1.5 mb-1">
                     <MIcon size={12} style={{ color: 'hsl(var(--text-muted))' }} />
@@ -124,8 +125,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
                 </p>
               </div>
               <div
-                className="rounded-xl overflow-hidden"
-                style={{ border: '1px solid hsl(var(--border))' }}
+                className="overflow-hidden"
+                style={{ border: '2px solid var(--ink)' }}
               >
                 {cuadre.productos.map((p, i) => (
                   <div
@@ -208,8 +209,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
           {/* Observaciones */}
           {cuadre.observaciones && (
             <div
-              className="rounded-xl p-4"
-              style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+              className="p-4"
+              style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
             >
               <p className="text-xs font-semibold uppercase tracking-wider mb-2" style={{ color: 'hsl(var(--text-muted))' }}>
                 Observaciones
@@ -225,8 +226,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
             <div className="space-y-2">
               <button
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150"
-                style={{ color: 'hsl(var(--primary-light))', border: '1px solid hsl(var(--primary) / 0.3)', background: 'hsl(var(--primary-dim))' }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150"
+                style={{ color: 'var(--bg)', border: '2px solid var(--ink)', background: 'var(--ink)' }}
                 onClick={() => {
                   const cfg = getConfig();
                   printCuadrePDF(cuadre, cfg.nombre || 'Mi Negocio');
@@ -236,8 +237,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
               </button>
               <button
                 type="button"
-                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
-                style={{ color: 'hsl(var(--danger))', border: '1px solid hsl(var(--danger) / 0.3)' }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 text-sm font-medium transition-all duration-150 hover:bg-red-500/10"
+                style={{ color: 'var(--red)', border: '2px solid var(--red)' }}
                 onClick={() => setConfirmDelete(true)}
               >
                 <Trash2 size={15} />Eliminar este cuadre
@@ -245,8 +246,8 @@ export default function CuadreModal({ cuadre, onClose, onDelete }: Props) {
             </div>
           ) : (
             <div
-              className="rounded-xl p-4 space-y-3"
-              style={{ background: 'hsl(var(--danger-dim))', border: '1px solid hsl(var(--danger) / 0.3)' }}
+              className="p-4 space-y-3"
+              style={{ background: 'var(--bg-alt)', border: '2px solid var(--red)' }}
             >
               <div className="flex items-center gap-2">
                 <AlertTriangle size={15} style={{ color: 'hsl(var(--danger))' }} />

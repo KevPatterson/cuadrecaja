@@ -177,7 +177,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
   const handleScan = async () => {
     if (images.length === 0 || !apiKey.trim()) {
-      toast.error('Se requiere al menos una imagen y la API key de Google Gemini.');
+      toast.error('Se requiere al menos una imagen y la clave API de Google Gemini.');
       return;
     }
     setLoading(true);
@@ -223,7 +223,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
     <div className="animate-fade-in space-y-5">
       <div>
         <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
-          Cuadre Anterior (OCR)
+          Cuadre anterior (OCR)
         </h2>
         <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
           Sube una o varias fotos del cuadre de ayer para pre-llenar el inventario. Los productos se extraen en el orden de las imágenes. Este paso es opcional.
@@ -233,26 +233,26 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       {/* API Key */}
       <div>
         <label className="label">
-          <span className="flex items-center gap-1.5"><Key size={12} />API Key de Google Gemini</span>
+          <span className="flex items-center gap-1.5"><Key size={12} />Clave API de Google Gemini</span>
         </label>
         <p className="text-xs mb-1.5" style={{ color: 'hsl(var(--text-muted))' }}>
-          Se guarda localmente. Obtenla gratis en aistudio.google.com → Get API key
+          Se guarda localmente. Obténla gratis en aistudio.google.com → Obtener clave API
         </p>
         {canUseSavedKey && (
           <button
             type="button"
-            className="text-xs mb-2 px-2 py-1 rounded-md border transition-colors"
+            className="text-xs mb-2 px-2 py-1 border transition-colors"
             style={{
-              color: 'hsl(var(--primary-light))',
-              borderColor: 'hsl(var(--primary) / 0.35)',
-              background: 'hsl(var(--primary-dim))',
+              color: 'var(--ink)',
+              borderColor: 'var(--ink)',
+              background: 'var(--bg-alt)',
             }}
             onClick={() => {
               onApiKeyChange(normalizedSavedKey);
-              toast.success('API key guardada cargada.');
+              toast.success('Se cargó la clave API guardada.');
             }}
           >
-            Usar API key guardada
+            Usar clave API guardada
           </button>
         )}
         <div className="relative">
@@ -282,10 +282,10 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
         {/* Drop zone */}
         <div
-          className="border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all duration-150"
+          className="border-2 border-dashed p-5 text-center cursor-pointer transition-all duration-150"
           style={{
-            borderColor: images.length > 0 ? 'hsl(var(--primary) / 0.5)' : 'hsl(var(--border))',
-            background: images.length > 0 ? 'hsl(var(--primary-dim))' : 'hsl(var(--surface-2))',
+            borderColor: 'var(--ink)',
+            background: images.length > 0 ? 'var(--bg-alt)' : 'var(--bg)',
           }}
           onClick={() => fileRef.current?.click()}
           onDragOver={e => e.preventDefault()}
@@ -318,8 +318,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
             {images.map((img, i) => (
               <div
                 key={`img-${i}`}
-                className="flex items-center gap-3 rounded-lg px-3 py-2"
-                style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+                className="flex items-center gap-3 px-3 py-2"
+                style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
@@ -337,7 +337,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
                 </div>
                 <button
                   type="button"
-                  className="shrink-0 p-1 rounded-md transition-colors hover:bg-red-500/20"
+                  className="shrink-0 p-1 transition-colors hover:bg-red-500/20"
                   style={{ color: 'hsl(var(--text-muted))' }}
                   onClick={e => { e.stopPropagation(); removeImage(i); }}
                   aria-label={`Eliminar imagen ${i + 1}`}
@@ -353,14 +353,14 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       {/* Scan progress */}
       {scanProgress && (
         <div
-          className="rounded-lg px-4 py-3 flex items-center gap-3"
-          style={{ background: 'hsl(var(--primary-dim))', border: '1px solid hsl(var(--primary) / 0.3)' }}
+          className="px-4 py-3 flex items-center gap-3"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
-          <svg className="animate-spin w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" style={{ color: 'hsl(var(--primary-light))' }}>
+          <svg className="animate-spin w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" style={{ color: 'var(--ink)' }}>
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
           </svg>
-          <p className="text-sm" style={{ color: 'hsl(var(--primary-light))' }}>
+          <p className="text-sm" style={{ color: 'var(--ink)' }}>
             Analizando imagen {scanProgress.current} de {scanProgress.total}…
           </p>
         </div>
@@ -369,12 +369,12 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       {/* Result preview */}
       {result && (
         <div
-          className="rounded-xl p-4 space-y-3 animate-fade-in"
-          style={{ background: 'hsl(var(--primary-dim))', border: '1px solid hsl(var(--primary) / 0.3)' }}
+          className="p-4 space-y-3 animate-fade-in"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <div className="flex items-center gap-2">
-            <CheckCircle size={16} style={{ color: 'hsl(var(--primary-light))' }} />
-            <span className="text-sm font-semibold" style={{ color: 'hsl(var(--primary-light))' }}>
+            <CheckCircle size={16} style={{ color: 'var(--ink)' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--ink)' }}>
               {result.length} productos extraídos de {images.length} imagen(es)
             </span>
           </div>
@@ -382,8 +382,8 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
             {result.map((p, i) => (
               <div
                 key={`ocr-result-${i}`}
-                className="rounded-lg p-2.5 text-xs"
-                style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+                className="p-2.5 text-xs"
+                style={{ background: 'var(--bg)', border: '1px solid var(--ink)' }}
               >
                 <p className="font-medium mb-2" style={{ color: 'hsl(var(--text-secondary))' }}>
                   {i + 1}. {p.nombre}
@@ -402,12 +402,12 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
 
       {/* Warning */}
       <div
-        className="flex gap-2 rounded-lg p-3"
-        style={{ background: 'hsl(var(--warning-dim))', border: '1px solid hsl(var(--warning) / 0.2)' }}
+        className="flex gap-2 p-3"
+        style={{ background: 'var(--bg-alt)', border: '2px solid var(--amber)' }}
       >
-        <AlertTriangle size={14} className="mt-0.5 shrink-0" style={{ color: 'hsl(var(--warning))' }} />
-        <p className="text-xs" style={{ color: 'hsl(var(--warning))' }}>
-          La API key se guarda solo en tu dispositivo. Verifica los datos extraídos antes de continuar.
+        <AlertTriangle size={14} className="mt-0.5 shrink-0" style={{ color: 'var(--amber)' }} />
+        <p className="text-xs" style={{ color: 'var(--amber)' }}>
+          La clave API se guarda solo en tu dispositivo. Verifica los datos extraídos antes de continuar.
         </p>
       </div>
 

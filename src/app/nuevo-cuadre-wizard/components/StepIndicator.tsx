@@ -1,14 +1,13 @@
 'use client';
 import React from 'react';
-import { Check } from 'lucide-react';
 
 const STEPS = [
-  { num: 1, label: 'Turno' },
+  { num: 1, label: 'TURNO' },
   { num: 2, label: 'OCR' },
-  { num: 3, label: 'Inventario' },
-  { num: 4, label: 'Ingresos' },
-  { num: 5, label: 'Arqueo' },
-  { num: 6, label: 'Resumen' },
+  { num: 3, label: 'INV' },
+  { num: 4, label: 'ING' },
+  { num: 5, label: 'ARQ' },
+  { num: 6, label: 'RES' },
 ];
 
 interface Props {
@@ -18,46 +17,23 @@ interface Props {
 export default function StepIndicator({ currentStep }: Props) {
   return (
     <div className="w-full overflow-x-auto scrollbar-thin pb-1">
-      <div className="flex items-center min-w-max mx-auto px-2">
+      <div className="ledger-step-track mx-auto px-2">
         {STEPS.map((step, idx) => {
           const done = currentStep > step.num;
           const active = currentStep === step.num;
+          const stateClass = done ? 'done' : active ? 'active' : 'future';
           return (
             <React.Fragment key={`step-${step.num}`}>
-              <div className="flex flex-col items-center gap-1">
-                <div
-                  className={
-                    done
-                      ? 'step-indicator-done'
-                      : active
-                      ? 'step-indicator-active' :'step-indicator-pending'
-                  }
-                >
-                  {done ? <Check size={14} /> : <span>{step.num}</span>}
+              <div className="ledger-step-item">
+                <div className={`ledger-step-number ${stateClass}`}>
+                  {String(step.num).padStart(2, '0')}
                 </div>
-                <span
-                  className="text-xs font-medium whitespace-nowrap"
-                  style={{
-                    color: active
-                      ? 'hsl(var(--primary-light))'
-                      : done
-                      ? 'hsl(var(--text-secondary))'
-                      : 'hsl(var(--text-muted))',
-                  }}
-                >
+                <span className="ledger-step-label" style={{ color: done || active ? 'var(--ink)' : 'var(--ink-muted)' }}>
                   {step.label}
                 </span>
               </div>
               {idx < STEPS.length - 1 && (
-                <div
-                  className="h-px flex-1 mx-1 mt-[-16px]"
-                  style={{
-                    minWidth: '1.5rem',
-                    background: done
-                      ? 'hsl(var(--primary))'
-                      : 'hsl(var(--border))',
-                  }}
-                />
+                <span className="ledger-step-divider">—</span>
               )}
             </React.Fragment>
           );

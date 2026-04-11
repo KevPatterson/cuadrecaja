@@ -48,12 +48,12 @@ export default function Step4IngresosGastos({
 
       {/* Transferencias */}
       <div
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+        className="p-4 space-y-3"
+        style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
       >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg" style={{ background: 'hsl(var(--primary-dim))' }}>
-            <ArrowDownLeft size={16} style={{ color: 'hsl(var(--primary-light))' }} />
+          <div className="p-1.5" style={{ background: 'var(--bg-alt)', border: '1px solid var(--ink)' }}>
+            <ArrowDownLeft size={16} style={{ color: 'var(--ink)' }} />
           </div>
           <h3 className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Transferencias recibidas
@@ -72,7 +72,7 @@ export default function Step4IngresosGastos({
           onChange={e => onTransferencias(parseFloat(e.target.value) || 0)}
         />
         {transferencias > 0 && (
-          <p className="text-xs font-mono-nums" style={{ color: 'hsl(var(--primary-light))' }}>
+          <p className="text-xs font-mono-nums" style={{ color: 'var(--ink)' }}>
             + {formatCUP(transferencias)}
           </p>
         )}
@@ -80,12 +80,12 @@ export default function Step4IngresosGastos({
 
       {/* Devoluciones */}
       <div
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+        className="p-4 space-y-3"
+        style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
       >
         <div className="flex items-center gap-2">
-          <div className="p-1.5 rounded-lg" style={{ background: 'hsl(var(--warning-dim))' }}>
-            <ArrowUpRight size={16} style={{ color: 'hsl(var(--warning))' }} />
+          <div className="p-1.5" style={{ background: 'var(--bg-alt)', border: '1px solid var(--amber)' }}>
+            <ArrowUpRight size={16} style={{ color: 'var(--amber)' }} />
           </div>
           <h3 className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Devoluciones
@@ -112,13 +112,13 @@ export default function Step4IngresosGastos({
 
       {/* Gastos */}
       <div
-        className="rounded-xl p-4 space-y-3"
-        style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+        className="p-4 space-y-3"
+        style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg" style={{ background: 'hsl(var(--danger-dim))' }}>
-              <MinusCircle size={16} style={{ color: 'hsl(var(--danger))' }} />
+            <div className="p-1.5" style={{ background: 'var(--bg-alt)', border: '1px solid var(--red)' }}>
+              <MinusCircle size={16} style={{ color: 'var(--red)' }} />
             </div>
             <h3 className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
               Gastos del turno
@@ -170,8 +170,8 @@ export default function Step4IngresosGastos({
 
       {/* Summary */}
       <div
-        className="rounded-xl p-4 space-y-2"
-        style={{ background: 'hsl(var(--surface-3))', border: '1px solid hsl(var(--border-subtle))' }}
+        className="p-4 space-y-2"
+        style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
       >
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'hsl(var(--text-muted))' }}>
           Resumen de este paso

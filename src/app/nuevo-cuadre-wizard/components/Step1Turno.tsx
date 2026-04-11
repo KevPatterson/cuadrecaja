@@ -66,8 +66,8 @@ export default function Step1Turno({ data, onChange, config }: Props) {
         />
         {showSuggestions && filtered.length > 0 && (
           <div
-            className="absolute top-full left-0 right-0 z-20 mt-1 rounded-lg overflow-hidden shadow-xl"
-            style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+            className="absolute top-full left-0 right-0 z-20 mt-1 overflow-hidden"
+            style={{ background: 'hsl(var(--surface-2))', border: '2px solid var(--ink)', boxShadow: '4px 4px 0 var(--ink)' }}
           >
             {filtered.map(c => (
               <button
@@ -98,10 +98,10 @@ export default function Step1Turno({ data, onChange, config }: Props) {
                 type="button"
                 onClick={() => onChange({ ...data, turno: t })}
                 className={[
-                  'py-3 px-3 rounded-lg text-sm font-semibold transition-all duration-150 border-2 cursor-pointer select-none',
+                  'py-3 px-3 text-sm font-semibold transition-all duration-150 border-2 cursor-pointer select-none',
                   isSelected
-                    ? 'bg-emerald-900/60 border-emerald-500 text-emerald-300 shadow-md'
-                    : 'bg-transparent border-white/10 text-white/50 hover:border-white/25 hover:text-white/75 hover:bg-white/5',
+                    ? 'bg-black text-white border-black'
+                    : 'bg-transparent border-black text-black hover:shadow-[3px_3px_0_#0d0d0d] hover:-translate-x-px hover:-translate-y-px',
                 ].join(' ')}
               >
                 {t}

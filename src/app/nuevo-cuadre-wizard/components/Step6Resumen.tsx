@@ -38,25 +38,22 @@ export default function Step6Resumen({
 
   const statusConfig = {
     cuadra: {
-      label: '✓ La caja cuadra',
+      stamp: '✓ CUADRA',
       icon: CheckCircle2,
-      bg: 'hsl(var(--primary-dim))',
-      border: 'hsl(var(--primary) / 0.4)',
-      color: 'hsl(var(--primary-light))',
+      className: 'result-stamp-cuadra',
+      color: 'var(--green)',
     },
     faltante: {
-      label: `Faltante de ${formatCUP(Math.abs(diferencia))}`,
+      stamp: '✗ FALTANTE',
       icon: TrendingDown,
-      bg: 'hsl(var(--danger-dim))',
-      border: 'hsl(var(--danger) / 0.4)',
-      color: 'hsl(var(--danger))',
+      className: 'result-stamp-faltante',
+      color: 'var(--red)',
     },
     sobrante: {
-      label: `Sobrante de ${formatCUP(Math.abs(diferencia))}`,
+      stamp: '⚠ SOBRANTE',
       icon: TrendingUp,
-      bg: 'hsl(var(--warning-dim))',
-      border: 'hsl(var(--warning) / 0.4)',
-      color: 'hsl(var(--warning))',
+      className: 'result-stamp-sobrante',
+      color: 'var(--amber)',
     },
   };
 
@@ -101,31 +98,21 @@ export default function Step6Resumen({
   return (
     <div className="animate-fade-in space-y-5">
       <div>
-        <h2 className="text-lg font-semibold mb-1" style={{ color: 'hsl(var(--text-primary))' }}>
+        <h2 className="text-lg font-semibold mb-1" style={{ color: 'var(--ink)' }}>
           Resumen del Cierre
         </h2>
-        <p className="text-sm" style={{ color: 'hsl(var(--text-muted))' }}>
+        <p className="text-sm" style={{ color: 'var(--ink-muted)' }}>
           Verifica los totales y guarda el cuadre.
         </p>
       </div>
 
       {/* Difference banner */}
-      <div
-        className="rounded-xl p-5 flex items-center gap-4"
-        style={{ background: sc.bg, border: `1px solid ${sc.border}` }}
-      >
-        <StatusIcon size={32} style={{ color: sc.color, flexShrink: 0 }} />
-        <div>
-          <p className="text-base font-bold" style={{ color: sc.color }}>
-            {sc.label}
-          </p>
-          <p className="text-sm mt-0.5" style={{ color: sc.color, opacity: 0.8 }}>
-            Diferencia:{' '}
-            <span className="font-mono-nums font-bold">
-              {diferencia >= 0 ? '+' : ''}{formatCUP(diferencia)}
-            </span>
-          </p>
-        </div>
+      <div className="text-center py-1">
+        <StatusIcon size={22} style={{ color: sc.color, margin: '0 auto 0.5rem auto' }} />
+        <span className={`result-stamp ${sc.className}`}>{sc.stamp}</span>
+        <p className="text-sm mt-2" style={{ color: sc.color }}>
+          Diferencia: <span className="font-mono-nums font-medium">{diferencia >= 0 ? '+' : ''}{formatCUP(diferencia)}</span>
+        </p>
       </div>
 
       {/* 4 metric cards */}
@@ -135,16 +122,15 @@ export default function Step6Resumen({
           return (
             <div
               key={`metric-${m.id}`}
-              className="rounded-xl p-3 space-y-2"
-              style={{ background: m.bg, border: '1px solid hsl(var(--border-subtle))' }}
+              className="metric-strip p-2 space-y-2"
             >
               <div className="flex items-center gap-1.5">
-                <MIcon size={13} style={{ color: m.color, opacity: 0.7 }} />
-                <p className="text-xs font-medium leading-tight" style={{ color: m.color, opacity: 0.7 }}>
+                <MIcon size={13} style={{ color: 'var(--ink-muted)', opacity: 0.7 }} />
+                <p className="metric-label leading-tight">
                   {m.label}
                 </p>
               </div>
-              <p className="font-mono-nums text-base font-bold" style={{ color: m.color }}>
+              <p className="font-mono-nums metric-value">
                 {m.value}
               </p>
             </div>
@@ -154,23 +140,22 @@ export default function Step6Resumen({
 
       {/* Calculation breakdown */}
       <div
-        className="rounded-xl p-4 space-y-2.5"
-        style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+        className="ledger-shell p-4 space-y-2.5"
       >
         <div className="flex items-center gap-2 mb-3">
-          <Scale size={15} style={{ color: 'hsl(var(--text-muted))' }} />
-          <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-secondary))' }}>
+          <Scale size={15} style={{ color: 'var(--ink-muted)' }} />
+          <p className="text-sm font-semibold" style={{ color: 'var(--ink-muted)' }}>
             Cálculo del esperado
           </p>
         </div>
         {[
-          { label: 'Fondo de apertura', value: fondo_apertura, sign: '+', color: 'hsl(var(--text-primary))' },
-          { label: 'Ventas (inventario)', value: ventas_inventario, sign: '+', color: 'hsl(var(--primary-light))' },
-          { label: 'Devoluciones', value: devoluciones, sign: '−', color: 'hsl(var(--warning))' },
-          { label: `Gastos (${gastos.length})`, value: gastos_total, sign: '−', color: 'hsl(var(--danger))' },
+          { label: 'Fondo de apertura', value: fondo_apertura, sign: '+', color: 'var(--ink)' },
+          { label: 'Ventas (inventario)', value: ventas_inventario, sign: '+', color: 'var(--ink)' },
+          { label: 'Devoluciones', value: devoluciones, sign: '−', color: 'var(--amber)' },
+          { label: `Gastos (${gastos.length})`, value: gastos_total, sign: '−', color: 'var(--red)' },
         ].map(row => (
           <div key={`calc-${row.label}`} className="flex justify-between items-center text-sm">
-            <span style={{ color: 'hsl(var(--text-secondary))' }}>{row.label}</span>
+            <span style={{ color: 'var(--ink-muted)' }}>{row.label}</span>
             <span className="font-mono-nums font-semibold" style={{ color: row.color }}>
               {row.sign} {formatCUP(row.value)}
             </span>
@@ -178,22 +163,22 @@ export default function Step6Resumen({
         ))}
         <div
           className="pt-2 mt-1 border-t flex justify-between items-center text-sm font-bold"
-          style={{ borderColor: 'hsl(var(--border))' }}
+          style={{ borderColor: 'var(--ink)' }}
         >
-          <span style={{ color: 'hsl(var(--text-primary))' }}>Esperado en efectivo</span>
-          <span className="font-mono-nums" style={{ color: 'hsl(var(--text-primary))' }}>
+          <span style={{ color: 'var(--ink)' }}>Esperado en efectivo</span>
+          <span className="font-mono-nums" style={{ color: 'var(--ink)' }}>
             = {formatCUP(esperado_efectivo)}
           </span>
         </div>
         <div className="flex justify-between items-center text-sm">
-          <span style={{ color: 'hsl(var(--text-secondary))' }}>Arqueo físico</span>
-          <span className="font-mono-nums font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
+          <span style={{ color: 'var(--ink-muted)' }}>Arqueo físico</span>
+          <span className="font-mono-nums font-semibold" style={{ color: 'var(--ink)' }}>
             {formatCUP(arqueo_total)}
           </span>
         </div>
         <div
           className="pt-2 border-t flex justify-between items-center"
-          style={{ borderColor: sc.border }}
+          style={{ borderColor: sc.color }}
         >
           <span className="text-sm font-bold" style={{ color: sc.color }}>Diferencia</span>
           <span className="font-mono-nums text-base font-bold" style={{ color: sc.color }}>
@@ -205,21 +190,20 @@ export default function Step6Resumen({
       {/* Productos summary */}
       {productos.length > 0 && (
         <div
-          className="rounded-xl p-4 space-y-2"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+          className="ledger-shell p-4 space-y-2"
         >
-          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'hsl(var(--text-muted))' }}>
+          <p className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ink-muted)' }}>
             Detalle de productos ({productos.length})
           </p>
           {productos.map((p, i) => (
             <div key={`resumen-prod-${i}`} className="flex justify-between items-center text-sm">
-              <span className="truncate mr-2" style={{ color: 'hsl(var(--text-secondary))' }}>
+              <span className="truncate mr-2" style={{ color: 'var(--ink-muted)' }}>
                 {p.nombre}
-                <span className="text-xs ml-1" style={{ color: 'hsl(var(--text-muted))' }}>
+                <span className="text-xs ml-1" style={{ color: 'var(--ink-muted)' }}>
                   ×{p.vendidos}
                 </span>
               </span>
-              <span className="font-mono-nums shrink-0 font-medium" style={{ color: 'hsl(var(--text-primary))' }}>
+              <span className="font-mono-nums shrink-0 font-medium" style={{ color: 'var(--ink)' }}>
                 {formatCUP(p.subtotal)}
               </span>
             </div>

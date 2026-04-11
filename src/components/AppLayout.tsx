@@ -5,7 +5,6 @@ import { usePathname } from 'next/navigation';
 import AppLogo from '@/components/ui/AppLogo';
 import { getConfig } from '@/lib/storage';
 import { PlusCircle, History, Settings } from 'lucide-react';
-import Icon from '@/components/ui/AppIcon';
 import SyncIndicator from '@/components/ui/SyncIndicator';
 
 
@@ -25,13 +24,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: 'hsl(var(--background))' }}>
+    <div className="min-h-screen flex flex-col" style={{ background: 'var(--bg)' }}>
       {/* Top bar */}
-      <header className="sticky top-0 z-40 border-b" style={{ background: 'hsl(var(--surface))', borderColor: 'hsl(var(--border-subtle))' }}>
+      <header className="sticky top-0 z-40 border-b-4" style={{ background: 'var(--ink)', borderColor: 'var(--red)' }}>
         <div className="max-w-screen-lg mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <AppLogo size={32} />
-            <span className="font-semibold text-base tracking-tight" style={{ color: 'hsl(var(--text-primary))' }}>
+            <span className="app-title text-base" style={{ color: 'var(--bg)' }}>
               {negocioNombre}
             </span>
           </div>
@@ -44,14 +43,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <Link
                   key={`nav-${item.href}`}
                   href={item.href}
-                  className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 ${
-                    active
-                      ? 'text-emerald-400' :'hover:bg-white/5'
-                  }`}
-                  style={{
-                    backgroundColor: active ? 'hsl(var(--primary-dim))' : undefined,
-                    color: active ? 'hsl(var(--primary-light))' : 'hsl(var(--text-secondary))',
-                  }}
+                  className={`ledger-nav-link flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all duration-150 ${active ? 'active' : ''}`}
                 >
                   <Icon size={16} />
                   {item.label}
@@ -73,7 +65,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {/* Mobile bottom nav */}
       <nav
         className="md:hidden fixed bottom-0 left-0 right-0 z-40 border-t flex"
-        style={{ background: 'hsl(var(--surface))', borderColor: 'hsl(var(--border-subtle))' }}
+        style={{ background: 'var(--ink)', borderColor: 'var(--red)' }}
       >
         {navItems.map(item => {
           const active = pathname === item.href;
@@ -82,8 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <Link
               key={`bottom-nav-${item.href}`}
               href={item.href}
-              className="flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all duration-150"
-              style={{ color: active ? 'hsl(var(--primary-light))' : 'hsl(var(--text-muted))' }}
+              className={`ledger-nav-link flex-1 flex flex-col items-center justify-center py-2.5 gap-1 transition-all duration-150 ${active ? 'active' : ''}`}
             >
               <Icon size={20} />
               <span className="text-xs font-medium">{item.short}</span>

@@ -73,11 +73,11 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
           </p>
         </div>
         <div
-          className="text-right shrink-0 rounded-lg px-3 py-2"
-          style={{ background: 'hsl(var(--primary-dim))' }}
+          className="text-right shrink-0 px-3 py-2"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
-          <p className="text-xs font-medium" style={{ color: 'hsl(var(--primary-light))' }}>Ventas</p>
-          <p className="font-mono-nums text-base font-bold" style={{ color: 'hsl(var(--primary-light))' }}>
+          <p className="text-xs font-medium" style={{ color: 'var(--ink-muted)' }}>Ventas</p>
+          <p className="font-mono-nums text-base font-bold" style={{ color: 'var(--ink)' }}>
             {formatCUP(ventasInventario)}
           </p>
         </div>
@@ -100,11 +100,11 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
                 key={`cat-${prod.id}`}
                 type="button"
                 onClick={() => addFromCatalog(prod)}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 border hover:scale-105"
+                className="flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium transition-all duration-150 border"
                 style={{
-                  background: 'hsl(var(--surface-2))',
-                  borderColor: 'hsl(var(--border))',
-                  color: 'hsl(var(--text-secondary))',
+                  background: 'var(--bg)',
+                  borderColor: 'var(--ink)',
+                  color: 'var(--ink)',
                 }}
               >
                 <Plus size={11} />
@@ -124,8 +124,8 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
           {productos.map((prod, idx) => (
             <div
               key={`prod-line-${idx}`}
-              className="rounded-xl p-3 space-y-3"
-              style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--border))' }}
+              className="p-3 space-y-3"
+              style={{ background: 'var(--bg)', border: '2px solid var(--ink)' }}
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="flex-1 min-w-0">
@@ -138,13 +138,13 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <div
-                    className="text-right rounded-lg px-2 py-1"
-                    style={{ background: prod.subtotal > 0 ? 'hsl(var(--primary-dim))' : 'hsl(var(--surface-3))' }}
+                    className="text-right px-2 py-1"
+                    style={{ background: 'var(--bg-alt)', border: '1px solid var(--ink)' }}
                   >
                     <p className="text-xs" style={{ color: 'hsl(var(--text-muted))' }}>Subtotal</p>
                     <p
                       className="font-mono-nums text-sm font-bold"
-                      style={{ color: prod.subtotal > 0 ? 'hsl(var(--primary-light))' : 'hsl(var(--text-muted))' }}
+                      style={{ color: prod.subtotal > 0 ? 'var(--ink)' : 'var(--ink-muted)' }}
                     >
                       {prod.subtotal.toFixed(2)}
                     </p>
@@ -207,8 +207,8 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
         </div>
       ) : (
         <div
-          className="rounded-xl p-8 text-center"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px dashed hsl(var(--border))' }}
+          className="p-8 text-center"
+          style={{ background: 'var(--bg)', border: '2px dashed var(--ink)' }}
         >
           <Package size={32} className="mx-auto mb-2" style={{ color: 'hsl(var(--text-muted))' }} />
           <p className="text-sm font-medium mb-1" style={{ color: 'hsl(var(--text-secondary))' }}>
@@ -223,8 +223,8 @@ export default function Step3Inventario({ productos, onChange, catalog }: Props)
       {/* Add custom product */}
       {showAddForm ? (
         <div
-          className="rounded-xl p-4 space-y-3 animate-fade-in"
-          style={{ background: 'hsl(var(--surface-2))', border: '1px solid hsl(var(--primary) / 0.3)' }}
+          className="p-4 space-y-3 animate-fade-in"
+          style={{ background: 'var(--bg-alt)', border: '2px solid var(--ink)' }}
         >
           <p className="text-sm font-semibold" style={{ color: 'hsl(var(--text-primary))' }}>
             Nuevo producto (este turno)

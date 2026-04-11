@@ -25,11 +25,11 @@ export default function CuadreCard({ cuadre, onClick }: Props) {
     <button
       type="button"
       onClick={onClick}
-      className="card w-full text-left p-4 transition-all duration-150 hover:border-opacity-50 hover:scale-[1.01] active:scale-[0.99]"
+      className="card w-full text-left p-4 transition-all duration-150"
       style={{
         borderColor:
-          status === 'cuadra' ?'hsl(var(--primary) / 0.2)'
-            : status === 'faltante' ?'hsl(var(--danger) / 0.2)' :'hsl(var(--warning) / 0.2)',
+          status === 'cuadra' ?'var(--green)'
+            : status === 'faltante' ?'var(--red)' :'var(--amber)',
       }}
     >
       <div className="flex items-start justify-between gap-3 mb-3">
