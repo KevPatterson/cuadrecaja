@@ -618,6 +618,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
           }
         }
 
+        setOcrStatus(`Error Gemini: ${msg}`);
         toast.error(`Error en imagen ${i + 1}: ${msg}`);
       }
     }
