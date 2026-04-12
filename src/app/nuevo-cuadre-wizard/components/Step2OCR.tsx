@@ -414,30 +414,47 @@ async function runOCRTesseract(
 }
 
 async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
-  return new Promise((resolve, reject) => {
-    const compressAndScan = async () => {
+  try {
+    // Leer imagen como base64
+    const reader = new FileReader();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+      reader.readAsDataURL(file);
+    });
+
+    // Comprimir si es necesario
+    let finalDataUrl = dataUrl;
+    const fileSizeKB = file.size / 1024;
+    
+    if (fileSizeKB > 1024) {
       try {
-        // Comprimir imagen antes de enviar a Gemini
-        const compressedDataUrl = await compressImageForGemini(file, 1024);
-        const base64ImageData = compressedDataUrl.split(',')[1];
-        const mimeType = 'image/jpeg'; // Siempre JPEG después de comprimir
+        finalDataUrl = await compressImageForGemini(file, 1024);
+      } catch (compressError) {
+        console.warn('No se pudo comprimir, usando imagen original:', compressError);
+      }
+    }
 
-        // Crear AbortController para timeout
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
+    const base64ImageData = finalDataUrl.split(',')[1];
+    const mimeType = finalDataUrl.startsWith('data:image/jpeg') ? 'image/jpeg' : file.type;
 
-        const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            signal: controller.signal,
-            body: JSON.stringify({
-              contents: [{
-                parts: [
-                  { inline_data: { mime_type: mimeType, data: base64ImageData } },
-                  {
-                    text: `Actua como extractor OCR estructurado para un punto de venta en Cuba.
+    // Crear AbortController para timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 90000); // 90 segundos
+
+    try {
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          signal: controller.signal,
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { inline_data: { mime_type: mimeType, data: base64ImageData } },
+                {
+                  text: `Actua como extractor OCR estructurado para un punto de venta en Cuba.
 
 Analiza la imagen del cuadre de caja y extrae por cada producto: nombre, precio, stock inicial, stock final, vendidos y total.
 
@@ -452,84 +469,93 @@ Reglas obligatorias:
 5) No inventes productos. Solo incluye los que aparezcan visibles en la imagen.
 6) Si no hay productos visibles, responde exactamente: {"productos":[]}.
 7) Devuelve un solo objeto JSON raiz.`
-                  }
-                ]
-              }]
-            })
-          }
-        );
+                }
+              ]
+            }]
+          })
+        }
+      );
 
-        clearTimeout(timeoutId);
+      clearTimeout(timeoutId);
 
-        if (!response.ok) {
-          const rawError = await response.text();
-          let apiMessage = '';
+      if (!response.ok) {
+        const rawError = await response.text();
+        let apiMessage = '';
 
-          try {
-            const parsed = JSON.parse(rawError) as { error?: { message?: string; status?: string } };
-            apiMessage = parsed.error?.message || parsed.error?.status || '';
-          } catch {
-            apiMessage = rawError;
-          }
-
-          throw new Error(apiMessage || `Error en la API de Google Gemini (HTTP ${response.status})`);
+        try {
+          const parsed = JSON.parse(rawError) as { error?: { message?: string; status?: string } };
+          apiMessage = parsed.error?.message || parsed.error?.status || '';
+        } catch {
+          apiMessage = rawError;
         }
 
-        const data = await response.json();
-        const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-        const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-        if (!jsonMatch) throw new Error('No se pudo extraer JSON de la respuesta');
+        throw new Error(apiMessage || `Error en la API de Google Gemini (HTTP ${response.status})`);
+      }
 
-        const parsed: { productos?: unknown } = JSON.parse(jsonMatch[0]);
-        const rawProducts: Record<string, unknown>[] = (Array.isArray(parsed.productos) ? parsed.productos : []).filter(
-          (item: unknown): item is Record<string, unknown> => typeof item === 'object' && item !== null
-        );
+      const data = await response.json();
+      const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleaned = text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+      const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No se pudo extraer JSON de la respuesta');
 
-        const products: ProductoLine[] = rawProducts.map((p: Record<string, unknown>) => {
-          const nombre = typeof p.nombre === 'string' ? p.nombre.trim() : '';
-          const precio = toNonNegativeNumber(p.precio) ?? 0;
+      const parsed: { productos?: unknown } = JSON.parse(jsonMatch[0]);
+      const rawProducts: Record<string, unknown>[] = (Array.isArray(parsed.productos) ? parsed.productos : []).filter(
+        (item: unknown): item is Record<string, unknown> => typeof item === 'object' && item !== null
+      );
 
-          const stockInicioParsed = toNonNegativeInt(p.stock_inicio);
-          const stockFinParsed = toNonNegativeInt(p.stock_fin);
-          const vendidosParsed = toNonNegativeInt(p.vendidos);
-          const totalParsed = toNonNegativeNumber(p.total);
+      const products: ProductoLine[] = rawProducts.map((p: Record<string, unknown>) => {
+        const nombre = typeof p.nombre === 'string' ? p.nombre.trim() : '';
+        const precio = toNonNegativeNumber(p.precio) ?? 0;
 
-          const stock_inicio = stockInicioParsed ?? 0;
-          const stock_fin = stockFinParsed ?? 0;
+        const stockInicioParsed = toNonNegativeInt(p.stock_inicio);
+        const stockFinParsed = toNonNegativeInt(p.stock_fin);
+        const vendidosParsed = toNonNegativeInt(p.vendidos);
+        const totalParsed = toNonNegativeNumber(p.total);
 
-          let vendidos = vendidosParsed;
-          if (vendidos == null && stockInicioParsed != null && stockFinParsed != null) {
-            vendidos = Math.max(0, stockInicioParsed - stockFinParsed);
-          }
-          if (vendidos == null) vendidos = 0;
+        const stock_inicio = stockInicioParsed ?? 0;
+        const stock_fin = stockFinParsed ?? 0;
 
-          let subtotal = totalParsed;
-          if (subtotal == null) {
-            subtotal = precio * vendidos;
-          }
+        let vendidos = vendidosParsed;
+        if (vendidos == null && stockInicioParsed != null && stockFinParsed != null) {
+          vendidos = Math.max(0, stockInicioParsed - stockFinParsed);
+        }
+        if (vendidos == null) vendidos = 0;
 
-          return {
-            nombre,
-            precio,
-            stock_inicio,
-            stock_fin,
-            vendidos,
-            subtotal,
-          };
-        }).filter((p: ProductoLine) => p.nombre.length > 0);
-        resolve(products);
-      } catch (e) {
-        if (e instanceof Error && e.name === 'AbortError') {
-          reject(new Error('La solicitud a Gemini tardó demasiado (timeout de 60s). Verifica tu conexión o intenta con una imagen más pequeña.'));
-        } else {
-          reject(e);
+        let subtotal = totalParsed;
+        if (subtotal == null) {
+          subtotal = precio * vendidos;
+        }
+
+        return {
+          nombre,
+          precio,
+          stock_inicio,
+          stock_fin,
+          vendidos,
+          subtotal,
+        };
+      }).filter((p: ProductoLine) => p.nombre.length > 0);
+      
+      return products;
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      
+      if (fetchError instanceof Error) {
+        if (fetchError.name === 'AbortError') {
+          throw new Error('La solicitud tardó demasiado (90s). Verifica tu conexión o usa una imagen más pequeña.');
+        }
+        if (fetchError.message.includes('Failed to fetch') || fetchError.message.includes('NetworkError')) {
+          throw new Error('Error de conexión. Verifica tu internet y que la API key sea válida.');
         }
       }
-    };
-    
-    compressAndScan();
-  });
+      throw fetchError;
+    }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Error desconocido al procesar la imagen');
+  }
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -661,7 +687,12 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       try {
         let products: ProductoLine[] = [];
         if (geminiEnabled) {
-          setOcrStatus(useSharedKey ? 'Preparando imagen y analizando con Gemini AI (clave compartida)...' : 'Preparando imagen y analizando con Gemini AI...');
+          const sizeKB = Math.round(images[i].file.size / 1024);
+          setOcrStatus(
+            useSharedKey 
+              ? `Procesando imagen ${i + 1}/${images.length} (${sizeKB}KB) con Gemini AI (clave compartida)...` 
+              : `Procesando imagen ${i + 1}/${images.length} (${sizeKB}KB) con Gemini AI...`
+          );
           products = await scanImage(images[i].file, effectiveGeminiKey);
         } else {
           setOcrStatus('Cargando motor de analisis...');
