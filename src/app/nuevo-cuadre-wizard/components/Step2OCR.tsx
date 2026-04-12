@@ -225,6 +225,58 @@ function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(max, value));
 }
 
+async function compressImageForGemini(file: File, maxSizeKB: number = 1024): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        // Reducir dimensiones si la imagen es muy grande
+        const maxDimension = 2048;
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = (height / width) * maxDimension;
+            width = maxDimension;
+          } else {
+            width = (width / height) * maxDimension;
+            height = maxDimension;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('No se pudo comprimir la imagen.'));
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+
+        // Intentar con diferentes calidades hasta conseguir el tamaño deseado
+        let quality = 0.9;
+        let dataUrl = canvas.toDataURL('image/jpeg', quality);
+        
+        while (dataUrl.length > maxSizeKB * 1024 * 1.37 && quality > 0.1) {
+          quality -= 0.1;
+          dataUrl = canvas.toDataURL('image/jpeg', quality);
+        }
+
+        resolve(dataUrl);
+      };
+      img.onerror = () => reject(new Error('No se pudo cargar la imagen para compresión.'));
+      img.src = reader.result as string;
+    };
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo para compresión.'));
+  });
+}
+
 function preprocessImage(imageDataUrl: string, options?: PreprocessOptions): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -363,18 +415,23 @@ async function runOCRTesseract(
 
 async function scanImage(file: File, apiKey: string): Promise<ProductoLine[]> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = async () => {
+    const compressAndScan = async () => {
       try {
-        const base64ImageData = (reader.result as string).split(',')[1];
-        const mimeType = file.type;
+        // Comprimir imagen antes de enviar a Gemini
+        const compressedDataUrl = await compressImageForGemini(file, 1024);
+        const base64ImageData = compressedDataUrl.split(',')[1];
+        const mimeType = 'image/jpeg'; // Siempre JPEG después de comprimir
+
+        // Crear AbortController para timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 60000); // 60 segundos timeout
 
         const response = await fetch(
           `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
+            signal: controller.signal,
             body: JSON.stringify({
               contents: [{
                 parts: [
@@ -401,6 +458,8 @@ Reglas obligatorias:
             })
           }
         );
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
           const rawError = await response.text();
@@ -461,10 +520,15 @@ Reglas obligatorias:
         }).filter((p: ProductoLine) => p.nombre.length > 0);
         resolve(products);
       } catch (e) {
-        reject(e);
+        if (e instanceof Error && e.name === 'AbortError') {
+          reject(new Error('La solicitud a Gemini tardó demasiado (timeout de 60s). Verifica tu conexión o intenta con una imagen más pequeña.'));
+        } else {
+          reject(e);
+        }
       }
     };
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
+    
+    compressAndScan();
   });
 }
 
@@ -597,7 +661,7 @@ export default function Step2OCR({ apiKey, savedApiKey, onApiKeyChange, onProduc
       try {
         let products: ProductoLine[] = [];
         if (geminiEnabled) {
-          setOcrStatus(useSharedKey ? 'Analizando con Gemini AI (clave compartida)...' : 'Analizando con Gemini AI...');
+          setOcrStatus(useSharedKey ? 'Preparando imagen y analizando con Gemini AI (clave compartida)...' : 'Preparando imagen y analizando con Gemini AI...');
           products = await scanImage(images[i].file, effectiveGeminiKey);
         } else {
           setOcrStatus('Cargando motor de analisis...');
