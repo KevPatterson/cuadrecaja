@@ -42,7 +42,7 @@ export default function ServiceWorkerUpdatePrompt() {
           });
         });
       } catch {
-        // No-op: app continues to work without SW registration.
+        // App continues without service worker
       }
     };
 

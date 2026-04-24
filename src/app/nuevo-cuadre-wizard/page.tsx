@@ -199,7 +199,6 @@ export default function NuevoCuadrePage() {
         ts: Date.now(),
       };
 
-      // Backend integration point: POST cuadre to API
       saveCuadre(cuadre);
       clearDraft();
 

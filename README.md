@@ -155,7 +155,3 @@ Para validar que no se pierden datos:
 5. Reconectar, navegar, volver a desconectar.
 6. Confirmar que datos y borrador se mantienen.
 7. Exportar respaldo JSON, borrar datos, importar respaldo y validar restauracion total.
-
-## Demo
-
-https://cuadrecaja7449.builtwithrocket.new

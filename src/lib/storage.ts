@@ -68,11 +68,10 @@ function setItemSafe(key: string, value: string): boolean {
     return false;
   }
 
-  // Secondary copy for recovery from corrupt/incomplete writes.
   try {
     localStorage.setItem(shadowKey(key), value);
   } catch {
-    // Best effort only.
+    // Ignore shadow write failures
   }
   return true;
 }
@@ -82,12 +81,12 @@ function removeItemSafe(key: string): void {
   try {
     localStorage.removeItem(key);
   } catch {
-    // Best effort only.
+    // Ignore removal failures
   }
   try {
     localStorage.removeItem(shadowKey(key));
   } catch {
-    // Best effort only.
+    // Ignore shadow removal failures
   }
 }
 
@@ -97,7 +96,7 @@ function getItemSafe(key: string): string | null {
     const value = localStorage.getItem(key);
     if (value !== null) return value;
   } catch {
-    // Fallback to shadow key.
+    // Try shadow copy
   }
 
   try {
@@ -115,7 +114,7 @@ function recoverFromShadow(key: string): string | null {
     try {
       localStorage.setItem(key, shadow);
     } catch {
-      // Best effort only.
+      // Ignore write failure
     }
     return shadow;
   } catch {
@@ -478,7 +477,7 @@ export function createBackupSnapshot(): void {
     };
     setItemSafe(KEYS.backup, JSON.stringify(snapshot));
   } catch {
-    // Silently fail — backup is best-effort
+    // Backup is best-effort
   }
 }
 
@@ -510,7 +509,6 @@ export function restoreFromBackup(): boolean {
 
 export function startAutoBackup(): () => void {
   if (typeof window === 'undefined') return () => {};
-  // Immediate backup on start
   createBackupSnapshot();
   const interval = setInterval(createBackupSnapshot, BACKUP_INTERVAL_MS);
   return () => clearInterval(interval);

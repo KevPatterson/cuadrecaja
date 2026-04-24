@@ -43,7 +43,6 @@ export default function ConfigNegocio({ config, onSaved }: Props) {
       fondo_base: parseFloat(fondoBase) || 0,
       cajeros,
     };
-    // Backend integration point: PATCH /api/config
     saveConfig(updated);
     onSaved(updated);
     toast.success('Configuración guardada correctamente.');

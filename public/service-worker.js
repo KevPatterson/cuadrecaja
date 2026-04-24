@@ -11,9 +11,7 @@ const ASSETS = [
   "/assets/images/icon-512.png",
 ];
 
-function isSameOrigin(url) {
-  return url.origin === self.location.origin;
-}
+const isSameOrigin = (url) => url.origin === self.location.origin;
 
 self.addEventListener("install", e => {
   e.waitUntil(
@@ -32,10 +30,11 @@ self.addEventListener("message", event => {
 });
 
 self.addEventListener("activate", e => {
-  e.waitUntil(caches.keys().then(keys =>
-    Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
 });
 
 self.addEventListener("fetch", event => {
@@ -44,10 +43,8 @@ self.addEventListener("fetch", event => {
 
   const requestUrl = new URL(request.url);
 
-  // Do not cache external requests (e.g. OCR API, analytics, fonts).
   if (!isSameOrigin(requestUrl)) return;
 
-  // Navigation requests: network first, fallback to cache/offline page.
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
@@ -72,7 +69,6 @@ self.addEventListener("fetch", event => {
     return;
   }
 
-  // Static assets/API from same origin: stale-while-revalidate.
   event.respondWith(
     caches.match(request).then(cached => {
       const fetchPromise = fetch(request)
