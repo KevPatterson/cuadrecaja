@@ -1,157 +1,221 @@
 # CuadreCaja
 
-Aplicacion web PWA para el cuadre de caja diario en MIPYMEs cubanas.
+App web progresiva para cuadre de caja diario en pequeños negocios cubanos.
 
-Esta app prioriza modo offline y persistencia local: puedes trabajar sin internet, reconectar, y volver a desconectarte sin perder configuracion, borradores ni historial.
+Funciona completamente offline. Los datos se guardan en el dispositivo y no requieren conexión a internet para operar.
 
-## Caracteristicas Principales
+---
 
-- Wizard de nuevo cuadre en 6 pasos.
-- OCR opcional con Google Gemini para extraer productos desde imagenes.
-- Historial completo con filtros, detalle, exportacion a PDF y CSV, e importacion CSV.
-- Ajustes de negocio, cajeros, catalogo y clave de OCR.
-- Respaldos JSON con descarga, importacion y restauracion.
-- Soporte PWA con service worker y pagina fallback offline.
-- Aviso de nueva version disponible con actualizacion controlada por usuario.
+## Qué hace
 
-## Stack Tecnologico
+Registra y concilia el efectivo de tu negocio al final del turno:
 
-- Next.js 15 (App Router)
-- TypeScript
-- React 19
-- Tailwind CSS v3
-- lucide-react
-- sonner (toasts)
-- Persistencia: localStorage
+- Inventario de productos vendidos
+- Ingresos por transferencias
+- Gastos del día
+- Arqueo físico de billetes y monedas
+- Cálculo automático de diferencias
 
-## Inicio Rapido
+Todo se guarda localmente. Puedes exportar a CSV o PDF cuando necesites.
 
-1. Instalar dependencias.
+---
+
+## Instalación
 
 ```bash
 npm install
-```
-
-2. Ejecutar en desarrollo.
-
-```bash
 npm run dev
 ```
 
-3. Abrir en navegador.
+La app corre en `http://localhost:4028`
 
-- http://localhost:4028
+Para producción:
 
-## Scripts
-
-- npm run dev: servidor de desarrollo (puerto 4028)
-- npm run build: build de produccion
-- npm run start: arranque de app
-- npm run lint: revision de lint
-- npm run lint:fix: auto-fix de lint
-- npm run format: formateo con prettier
-- npm run type-check: chequeo TypeScript sin emitir archivos
-
-## Estructura Relevante
-
-```text
-src/
-    app/
-        nuevo-cuadre-wizard/
-        historial-de-cuadres/
-        ajustes/
-        layout.tsx
-    components/
-        AppLayout.tsx
-        ui/
-            SyncIndicator.tsx
-            ServiceWorkerUpdatePrompt.tsx
-    lib/
-        storage.ts
-
-public/
-    manifest.json
-    service-worker.js
-    offline.html
+```bash
+npm run build
+npm start
 ```
 
-## Persistencia y Seguridad de Datos
+---
 
-La capa de almacenamiento local esta centralizada en src/lib/storage.ts y aplica medidas para reducir perdida de datos:
+## Cómo funciona
 
-- Escritura segura con copia sombra por clave.
-- Recuperacion automatica desde copia sombra ante JSON corrupto.
-- Guardado de respaldo automatico al actualizar datos clave.
-- Respaldo incluye:
-    - configuracion
-    - catalogo
-    - historial
-    - borrador del wizard
+### 1. Wizard de cuadre (6 pasos)
 
-### Claves de localStorage en uso
+1. **Turno**: fecha, cajero, fondo inicial
+2. **OCR** (opcional): escanea foto del cuadre anterior para pre-llenar inventario
+3. **Inventario**: stock inicial/final de cada producto
+4. **Ingresos y gastos**: transferencias, devoluciones, gastos
+5. **Arqueo**: conteo físico de billetes
+6. **Resumen**: revisión final y guardado
 
-- mipyme_config
-- mipyme_catalog
-- mipyme_historial
-- mipyme_draft
-- mipyme_backup
+### 2. Historial
 
-Cada una mantiene copia auxiliar con sufijo _shadow para recuperacion.
+- Lista de todos los cuadres guardados
+- Filtros por estado (cuadra/faltante/sobrante)
+- Búsqueda por cajero, fecha o turno
+- Exportar a CSV o imprimir PDF individual
+- Importar cuadres desde CSV
 
-## Funcionamiento Offline
+### 3. Ajustes
 
-El service worker en public/service-worker.js implementa:
+- Nombre del negocio y fondo base
+- Lista de cajeros
+- Catálogo de productos (para acceso rápido)
+- API key de Gemini (para OCR)
+- Respaldos automáticos cada 5 minutos
+- Exportar/importar respaldo completo en JSON
 
-- Cache de rutas principales y assets criticos.
-- Estrategia network-first para navegacion.
-- Fallback a cache y a public/offline.html cuando no hay red.
-- Estrategia stale-while-revalidate para recursos GET del mismo origen.
-- Exclusiones de origen externo (OCR/API de terceros) para evitar cache incorrecto.
+---
 
-## Actualizacion de Nueva Version
+## OCR con Gemini
 
-El componente src/components/ui/ServiceWorkerUpdatePrompt.tsx:
+El paso 2 puede escanear fotos del cuadre anterior (IPV) y extraer productos automáticamente.
 
-- Detecta cuando existe un service worker nuevo en estado waiting.
-- Muestra banner de nueva version.
-- Permite:
-    - Actualizar ahora: envia SKIP_WAITING, activa nueva version y recarga.
-    - Mas tarde: mantiene version actual sin interrumpir flujo.
+Necesitas una API key de Google Gemini (gratis en [aistudio.google.com](https://aistudio.google.com/app/apikey)).
 
-Esto evita perder trabajo por recargas forzadas mientras se esta operando.
+Si no tienes internet o no quieres usar OCR, puedes saltarte este paso.
 
-## Flujo de Respaldos
+También incluye Tesseract.js como alternativa offline, aunque es menos preciso.
 
-En Ajustes:
+---
 
-- Descargar respaldo JSON: exporta snapshot completo actual.
-- Importar JSON: previsualiza metadatos antes de confirmar reemplazo.
-- Restaurar: aplica ultimo respaldo automatico local.
+## Modo offline
 
-El borrador tambien se restaura para continuar donde quedaste.
+La app funciona sin conexión:
 
-## OCR (Paso 2)
+- Service worker cachea rutas y assets
+- Todos los datos en localStorage
+- Respaldos automáticos cada 5 minutos
+- Página de fallback cuando no hay red
 
-- Requiere internet.
-- Puede usar API key propia de Google Gemini o una clave compartida con limite diario (si se configura `NEXT_PUBLIC_GEMINI_SHARED_KEY`).
-- Si la clave compartida alcanza el limite diario, puedes cambiar a Tesseract, usar una API key propia o esperar al siguiente dia.
-- Si no hay conexion, el paso OCR bloquea escaneo y permite continuar manualmente.
-- La clave API se guarda localmente en configuracion del dispositivo.
+El único requisito de internet es el OCR con Gemini (opcional).
 
-## Instalacion como PWA
+---
 
-1. Abrir la app en navegador movil compatible.
-2. Elegir anadir a pantalla de inicio.
-3. Ejecutar como app instalada.
+## Persistencia de datos
 
-## Verificacion Recomendada de Persistencia
+Todo se guarda en `localStorage` con estas claves:
 
-Para validar que no se pierden datos:
+- `mipyme_config` - configuración del negocio
+- `mipyme_catalog` - catálogo de productos
+- `mipyme_historial` - cuadres guardados
+- `mipyme_draft` - borrador del wizard
+- `mipyme_backup` - respaldo automático
 
-1. Crear configuracion, catalogo y un cuadre.
-2. Iniciar un borrador y dejarlo a mitad.
-3. Desconectar internet y recargar.
-4. Verificar que todo sigue visible.
-5. Reconectar, navegar, volver a desconectar.
-6. Confirmar que datos y borrador se mantienen.
-7. Exportar respaldo JSON, borrar datos, importar respaldo y validar restauracion total.
+Cada clave tiene una copia shadow (`_shadow`) para recuperación ante corrupción.
+
+---
+
+## Estructura del proyecto
+
+```
+src/
+├── app/
+│   ├── nuevo-cuadre-wizard/     # Wizard de 6 pasos
+│   ├── historial-de-cuadres/    # Lista y detalle de cuadres
+│   ├── ajustes/                 # Configuración y respaldos
+│   └── layout.tsx               # Layout principal
+├── components/
+│   ├── AppLayout.tsx            # Header y navegación
+│   └── ui/                      # Componentes reutilizables
+└── lib/
+    └── storage.ts               # Capa de persistencia
+
+public/
+├── service-worker.js            # Cache y offline
+├── manifest.json                # PWA config
+└── offline.html                 # Fallback sin conexión
+```
+
+---
+
+## Scripts disponibles
+
+```bash
+npm run dev          # Desarrollo (puerto 4028)
+npm run build        # Build de producción
+npm start            # Servidor de producción
+npm run lint         # Revisar código
+npm run lint:fix     # Corregir problemas de lint
+npm run format       # Formatear con Prettier
+npm run type-check   # Verificar tipos TypeScript
+```
+
+---
+
+## Stack
+
+- Next.js 15 (App Router)
+- React 19
+- TypeScript
+- Tailwind CSS
+- Lucide icons
+- Sonner (notificaciones)
+
+---
+    
+## Instalar como PWA
+
+En móvil:
+
+1. Abre la app en Chrome/Safari
+2. Menú → "Añadir a pantalla de inicio"
+3. Úsala como app nativa
+
+En escritorio (Chrome):
+
+1. Ícono de instalación en la barra de direcciones
+2. Click en "Instalar"
+
+---
+
+## Notas
+
+- Los datos solo existen en el dispositivo donde se crearon
+- No hay sincronización entre dispositivos
+- Usa los respaldos JSON para migrar datos entre dispositivos
+- El OCR funciona mejor con fotos nítidas y buena iluminación
+- Tesseract es más lento pero funciona offline
+
+---
+
+## Contribuir
+
+Pull requests bienvenidos. Para cambios grandes, abre un issue primero para discutir qué quieres cambiar.
+
+### Cómo contribuir
+
+1. Fork el proyecto
+2. Crea tu rama (`git checkout -b feature/algo-nuevo`)
+3. Commit tus cambios (`git commit -m 'Añade algo nuevo'`)
+4. Push a la rama (`git push origin feature/algo-nuevo`)
+5. Abre un Pull Request
+
+### Guías
+
+- Usa el linter y prettier antes de hacer commit
+- Mantén el código simple y legible
+- Documenta funciones complejas
+- Prueba en modo offline antes de enviar
+
+### Ideas para contribuir
+
+- Mejorar precisión del OCR con Tesseract
+- Añadir más opciones de exportación (Excel, etc)
+- Soporte para múltiples monedas
+- Gráficos de ventas por período
+- Modo oscuro
+- Sincronización opcional con backend
+
+---
+
+## Licencia
+
+MIT
+
+---
+
+## Contacto
+
+Si encuentras bugs o tienes sugerencias, abre un issue en GitHub.
